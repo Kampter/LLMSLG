@@ -102,6 +102,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # gitleaks scans history; needs a full clone, not a shallow one.
+          fetch-depth: 0
 
       - name: Shellcheck
         run: |
@@ -112,8 +115,10 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          config-path: .github/gitleaks.toml
+          # gitleaks-action does not accept config-path via `with:`; it reads
+          # the root .gitleaks.toml automatically.
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITLEAKS_ENABLE_SUMMARY: 'true'
 
   # ───────────────────────────────────────────────────────────────────
   # All-green gate. Required check in branch protection.
