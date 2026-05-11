@@ -38,8 +38,9 @@ effects beyond emitting an action.
   `src/llmagent/prompts/` and are versioned by filename suffix.
 - **Game-protocol types come from `python-packages/shared`.** Don't redeclare
   them locally — extend the shared model instead.
-- **Determinism for tests.** Use the `FakeLLM` fixture in `tests/conftest.py`
-  to make assertions stable.
+- **Determinism for tests.** Once real LLM calls land, add a `FakeLLM`
+  fixture to `tests/conftest.py` (not present yet — see the TODO there) and
+  route every test through it. No live provider traffic in unit tests.
 
 ## Useful skills here
 
