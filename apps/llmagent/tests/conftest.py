@@ -1,8 +1,7 @@
 """Pytest fixtures shared by tests/ in this package.
 
-TODO: add a `FakeLLM` fixture here once `LLMClient` lands. It will own the
-deterministic provider stub that every unit test routes through; see
-`apps/llmagent/CLAUDE.md` and `.claude/skills/debug-game-loop/SKILL.md`.
+`FakeLLM` currently lives inside `test_chat.py` since it is the only consumer.
+Promote it here when a second test module needs the same stub.
 """
 
 from __future__ import annotations
