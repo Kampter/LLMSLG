@@ -4,6 +4,14 @@ version: 2
 # Keeps lockfiles healthy without auto-merging. Reviewers gate the merge.
 # No Claude Code automation is wired here — this repo uses a 3rd-party
 # Claude provider, so Anthropic GitHub apps stay out of CI.
+#
+# Major-version bumps are intentionally suppressed for every ecosystem.
+# Reasons:
+#   - Major bumps almost always need code changes; an unattended PR helps no one.
+#   - Engines pins (Node >=20.18) and TS/React majors gate themselves on the
+#     ecosystem anyway; opening 10 red PRs a week is just noise.
+#   - When you actually want a major, do `pnpm up <pkg>@latest` or
+#     `uv add <pkg>@<version>` by hand and review the breaking changes.
 
 updates:
   - package-ecosystem: 'npm'
@@ -16,6 +24,9 @@ updates:
     labels: [dependencies, ts]
     commit-message:
       prefix: 'chore(deps)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: 'pip'
     directories:
@@ -31,6 +42,9 @@ updates:
     labels: [dependencies, python]
     commit-message:
       prefix: 'chore(deps)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -39,3 +53,6 @@ updates:
     labels: [dependencies, ci]
     commit-message:
       prefix: 'chore(ci)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
