@@ -1,0 +1,41 @@
+version: 2
+
+# Dependabot for LLMSLG.
+# Keeps lockfiles healthy without auto-merging. Reviewers gate the merge.
+# No Claude Code automation is wired here — this repo uses a 3rd-party
+# Claude provider, so Anthropic GitHub apps stay out of CI.
+
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '08:00'
+    open-pull-requests-limit: 5
+    labels: [dependencies, ts]
+    commit-message:
+      prefix: 'chore(deps)'
+
+  - package-ecosystem: 'pip'
+    directories:
+      - '/'
+      - '/apps/llmagent'
+      - '/apps/server'
+      - '/python-packages/shared'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '08:00'
+    open-pull-requests-limit: 5
+    labels: [dependencies, python]
+    commit-message:
+      prefix: 'chore(deps)'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    labels: [dependencies, ci]
+    commit-message:
+      prefix: 'chore(ci)'

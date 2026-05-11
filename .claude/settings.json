@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "claude-opus-4-7",
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "16384",
+    "CLAUDE_CODE_DISABLE_TELEMETRY_PROMPT": "1"
+  },
+  "permissions": {
+    "defaultMode": "default",
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "TodoWrite",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:platform.claude.com)",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:docs.astral.sh)",
+      "WebFetch(domain:pnpm.io)",
+      "WebFetch(domain:turborepo.com)",
+      "WebFetch(domain:nextjs.org)",
+      "Bash(pnpm:*)",
+      "Bash(uv:*)",
+      "Bash(turbo:*)",
+      "Bash(node:*)",
+      "Bash(npx:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Bash(prettier:*)",
+      "Bash(eslint:*)",
+      "Bash(tsc:*)",
+      "Bash(make:*)",
+      "Bash(./scripts/*)",
+      "Bash(bash scripts/*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(test:*)",
+      "Bash(true)",
+      "Bash(false)",
+      "Bash(echo:*)",
+      "Bash(printf:*)",
+      "Bash(jq:*)",
+      "Bash(mkdir -p:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~/*)",
+      "Bash(sudo:*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push --force-with-lease*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fdx*)",
+      "Bash(git checkout --*)",
+      "Bash(git branch -D*)",
+      "Bash(curl * | sh*)",
+      "Bash(curl * | bash*)",
+      "Bash(wget * | sh*)",
+      "Bash(wget * | bash*)",
+      "Bash(npm publish*)",
+      "Bash(pnpm publish*)",
+      "Bash(uv publish*)",
+      "Bash(docker push*)",
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl delete:*)",
+      "Bash(terraform apply*)",
+      "Bash(terraform destroy*)",
+      "Edit(.env)",
+      "Edit(.env.local)",
+      "Edit(.env.production)",
+      "Edit(**/.env)",
+      "Edit(**/.env.local)",
+      "Edit(**/.env.*.local)",
+      "Edit(**/secrets/**)",
+      "Edit(**/*.pem)",
+      "Edit(**/*.key)",
+      "Edit(pnpm-lock.yaml)",
+      "Edit(uv.lock)",
+      "Write(.env)",
+      "Write(.env.local)",
+      "Write(.env.production)",
+      "Write(**/secrets/**)",
+      "Read(.env)",
+      "Read(.env.local)",
+      "Read(.env.production)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/secrets/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-format.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/pre-bash-deny-secrets.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/session-start-context.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/stop-summary.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptExpansion": [
+      {
+        "matcher": "ship|release|deploy",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-router.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "claudeMdExcludes": []
+}

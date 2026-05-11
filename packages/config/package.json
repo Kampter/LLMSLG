@@ -1,0 +1,20 @@
+{
+  "name": "@llmslg/config",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Shared developer tooling configs (ESLint, Prettier presets). Placeholder.",
+  "main": "./index.js",
+  "files": [
+    "index.js",
+    "eslint.js",
+    "prettier.js"
+  ],
+  "scripts": {
+    "build": "echo 'nothing to build'",
+    "lint": "echo 'no lint'",
+    "typecheck": "echo 'no typecheck'",
+    "test": "echo 'no tests'",
+    "clean": "echo 'nothing to clean'"
+  }
+}

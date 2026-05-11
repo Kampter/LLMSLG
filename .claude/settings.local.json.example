@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+
+  "_comment_top": "Copy this file to .claude/settings.local.json. It is gitignored. Anything you put here merges into the shared .claude/settings.json. Use it for per-developer model overrides, extra allowlist entries, or to silence specific rules while debugging.",
+
+  "model": "claude-opus-4-7",
+
+  "env": {
+    "_comment_env": "Personal env. Do NOT put secrets here - use a real .env file instead.",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "16384"
+  },
+
+  "permissions": {
+    "_comment_perms": "Extra entries here append to (do not replace) the shared allow/deny.",
+    "allow": [
+      "Bash(./scratch/*)"
+    ],
+    "deny": []
+  },
+
+  "claudeMdExcludes": []
+}

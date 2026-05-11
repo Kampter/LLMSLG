@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+out/
+coverage/
+.venv/
+*.py
+*.toml
+*.lock
+pnpm-lock.yaml
+uv.lock
+.claude/sessions/
+.claude/cache/
+.claude/projects/

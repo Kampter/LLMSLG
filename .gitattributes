@@ -1,0 +1,40 @@
+# Auto-detect text and normalize line endings to LF on commit.
+* text=auto eol=lf
+
+# Source code (force LF).
+*.py    text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.json  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.toml  text eol=lf
+*.md    text eol=lf
+*.sh    text eol=lf
+
+# Lock files: keep diffs tractable.
+pnpm-lock.yaml -diff linguist-generated=true
+uv.lock        -diff linguist-generated=true
+
+# Binary assets.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.ico  binary
+*.gif  binary
+*.pdf  binary
+*.woff binary
+*.woff2 binary
+*.mp3  binary
+*.mp4  binary
+*.wav  binary
+*.ogg  binary
+*.zip  binary
+*.tar.gz binary
+
+# Github linguist hints.
+docs/**       linguist-documentation
+.claude/**    linguist-vendored=false

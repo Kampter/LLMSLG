@@ -1,0 +1,30 @@
+[project]
+name = "llmagent"
+version = "0.0.1"
+description = "LLM-driven client agent that plays the LLMSLG game."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "LLMSLG Team" }]
+license = { text = "TBD" }
+
+dependencies = [
+    "shared",
+    "anthropic>=0.39.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.9.0",
+    "structlog>=24.4.0",
+    "tenacity>=9.0.0",
+]
+
+[project.scripts]
+llmagent = "llmagent.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llmagent"]
+
+[tool.uv.sources]
+shared = { workspace = true }

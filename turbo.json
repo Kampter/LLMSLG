@@ -1,0 +1,47 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "tui",
+  "globalDependencies": [
+    "pnpm-lock.yaml",
+    "uv.lock",
+    ".env",
+    ".env.local",
+    "tsconfig.base.json",
+    "ruff.toml"
+  ],
+  "globalEnv": ["NODE_ENV", "CI", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY"],
+  "globalPassThroughEnv": ["PATH", "HOME", "UV_CACHE_DIR", "PNPM_HOME"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "build/**"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.test.{ts,tsx,py}", "!**/__tests__/**", "!**/tests/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json", "pyproject.toml"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "inputs": ["$TURBO_DEFAULT$", "**/*.test.{ts,tsx,py}", "**/__tests__/**", "**/tests/**"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

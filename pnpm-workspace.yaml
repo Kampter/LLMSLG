@@ -1,0 +1,20 @@
+# pnpm workspace declaration.
+# Add a TS package by placing it under one of these globs and giving it a
+# package.json with the matching `name`. Internal deps use `workspace:*`.
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'tooling/*'
+
+# Catalog: single source of truth for shared dep versions.
+# Reference in package.json as: "react": "catalog:".
+catalog:
+  typescript: '^5.6.3'
+  '@types/node': '^22.9.0'
+  vitest: '^2.1.5'
+  tsx: '^4.19.2'
+  eslint: '^9.15.0'
+  prettier: '^3.3.3'
+
+# Workspace-wide settings.
+onlyBuiltDependencies: []

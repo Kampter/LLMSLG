@@ -1,0 +1,29 @@
+# Code owners for LLMSLG.
+#
+# When a PR touches a path here, the listed owner is automatically requested
+# for review. Use teams (@org/team) over individuals where possible.
+#
+# Fill these in once the team layout is known.
+
+# Repository-wide default owner
+# *                           @your-org/maintainers
+
+# Claude harness
+# /.claude/                   @your-org/claude-harness
+# /CLAUDE.md                  @your-org/claude-harness
+
+# CI and tooling
+# /.github/                   @your-org/devx
+# /scripts/                   @your-org/devx
+# /turbo.json                 @your-org/devx
+# /pyproject.toml             @your-org/devx
+# /pnpm-workspace.yaml        @your-org/devx
+
+# Apps
+# /apps/llmagent/             @your-org/agent
+# /apps/server/               @your-org/server
+# /apps/landing/              @your-org/web
+
+# Shared contracts
+# /packages/types/            @your-org/protocol
+# /python-packages/shared/    @your-org/protocol

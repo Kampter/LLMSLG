@@ -1,0 +1,33 @@
+{
+  "name": "llmslg",
+  "private": true,
+  "version": "0.0.0",
+  "description": "LLMSLG monorepo: LLM-driven SLG agent, game server, and landing page.",
+  "packageManager": "pnpm@9.12.3",
+  "engines": {
+    "node": ">=20.18.0",
+    "pnpm": ">=9.12.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "py:lint": "uv run ruff check .",
+    "py:format": "uv run ruff format .",
+    "py:typecheck": "uv run mypy .",
+    "py:test": "uv run pytest",
+    "check": "bash scripts/check.sh",
+    "bootstrap": "bash scripts/bootstrap.sh"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "@types/node": "catalog:"
+  }
+}

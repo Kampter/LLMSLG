@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Workspace package to release'
+        required: true
+        type: choice
+        options:
+          - shared
+          - types
+          - llmagent
+          - server
+          - landing
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release ${{ inputs.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: |
+          pnpm install --frozen-lockfile
+          uv sync --all-packages --all-groups --frozen
+
+      - name: Check before release
+        run: pnpm check
+
+      - name: Build (if applicable)
+        run: |
+          case "${{ inputs.package }}" in
+            types|landing) pnpm --filter @llmslg/${{ inputs.package }} build ;;
+            llmagent|server|shared) uv build --package ${{ inputs.package }} ;;
+          esac
+
+      # Publishing is intentionally a manual step. This workflow stops at
+      # the artifact build; the operator promotes from there. Adjust once
+      # the team picks a registry strategy.
+      - name: Build artifacts available
+        run: |
+          echo "Release dry-run for ${{ inputs.package }} complete."
+          echo "Artifacts are in dist/ or .next/ — review before any publish."

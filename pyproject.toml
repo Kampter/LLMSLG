@@ -1,0 +1,140 @@
+# uv workspace root.
+#
+# This file is the entry point for the Python side of the monorepo.
+# Each member is a self-contained uv project with its own pyproject.toml.
+# Internal deps are wired via [tool.uv.sources] using { workspace = true }.
+
+[project]
+name = "llmslg-root"
+version = "0.0.0"
+description = "LLMSLG Python workspace root (no runtime code)."
+requires-python = ">=3.12"
+readme = "README.md"
+# The root project has no runtime deps. Real apps/packages own their deps.
+dependencies = []
+
+[dependency-groups]
+# Dev-only deps shared across the whole workspace.
+# Install with: `uv sync --all-groups --all-packages`
+dev = [
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "pre-commit>=4.0.0",
+]
+
+[tool.uv.workspace]
+members = [
+    "apps/llmagent",
+    "apps/server",
+    "python-packages/shared",
+]
+# Anything you want excluded from workspace discovery goes here.
+exclude = []
+
+[tool.uv]
+# Lock everything together for reproducible installs.
+package = false  # The root itself is not a package, it is a workspace shell.
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [
+    ".venv",
+    "node_modules",
+    "dist",
+    "build",
+    ".turbo",
+    "apps/landing",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "RUF", # ruff-specific
+    "S",   # bandit security
+    "ASYNC", # async best practices
+]
+ignore = [
+    "E501",  # line length is handled by formatter
+    "S101",  # assert is fine in tests
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S", "N802"]
+"**/conftest.py" = ["S"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = [
+    "apps/llmagent/src",
+    "apps/server/src",
+    "python-packages/shared/src",
+]
+exclude = [
+    "build/",
+    "dist/",
+    "node_modules/",
+    "apps/landing/",
+    "\\.venv/",
+]
+
+[[tool.mypy.overrides]]
+# Tests already include explicit `-> None` annotations, so we don't need
+# to relax disallow_untyped_defs. Add overrides here only when you have
+# an actual library that ships without type stubs.
+module = ["pytest", "pytest.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--showlocals",
+    "--import-mode=importlib",
+]
+testpaths = ["apps", "python-packages"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+markers = [
+    "slow: tests that take >1s",
+    "integration: requires external services",
+    "gpu: requires a GPU",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["apps", "python-packages"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == \"__main__\":",
+]

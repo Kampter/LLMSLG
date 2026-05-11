@@ -1,0 +1,31 @@
+{
+  "name": "@llmslg/landing",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf .next .turbo node_modules"
+  },
+  "dependencies": {
+    "@llmslg/types": "workspace:*",
+    "next": "^15.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "eslint": "catalog:",
+    "eslint-config-next": "^15.0.3",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

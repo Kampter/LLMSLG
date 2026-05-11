@@ -1,0 +1,57 @@
+# pre-commit hooks for LLMSLG.
+# Install with: pre-commit install --install-hooks
+# Run on demand: pre-commit run --all-files
+#
+# Keep this list small. Heavy linters belong in CI, not in pre-commit.
+
+repos:
+  # ── basic hygiene ────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-toml
+      - id: check-json
+        exclude: \.vscode/.*
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=512]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-executables-have-shebangs
+
+  # ── secrets ──────────────────────────────────────────────────────────
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  # ── Python ───────────────────────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # ── Shell ────────────────────────────────────────────────────────────
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        files: \.(sh|bash)$
+
+  # ── TypeScript / JSON / Markdown / YAML formatting (Prettier) ────────
+  # Run via local pnpm so we share the workspace config.
+  - repo: local
+    hooks:
+      - id: prettier
+        name: Prettier (staged TS/JSON/MD/YAML)
+        entry: pnpm exec prettier --write --ignore-unknown
+        language: system
+        types_or: [ts, tsx, javascript, json, markdown, yaml]
+        require_serial: true

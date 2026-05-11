@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────
+  # TypeScript: format, lint, typecheck, test
+  # ───────────────────────────────────────────────────────────────────
+  typescript:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Format (Prettier)
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  # ───────────────────────────────────────────────────────────────────
+  # Python: format, lint, typecheck, test
+  # ───────────────────────────────────────────────────────────────────
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+          enable-cache: true
+          cache-dependency-glob: '**/uv.lock'
+
+      - name: Setup Python
+        run: uv python install 3.12
+
+      - name: Sync workspace
+        run: uv sync --all-packages --all-groups --frozen
+
+      - name: Format (Ruff)
+        run: uv run ruff format --check .
+
+      - name: Lint (Ruff)
+        run: uv run ruff check .
+
+      - name: Typecheck (Mypy)
+        run: uv run mypy .
+
+      - name: Test
+        run: uv run pytest --cov --cov-report=term-missing
+
+  # ───────────────────────────────────────────────────────────────────
+  # Cross-cutting: shellcheck, basic secret scan
+  # ───────────────────────────────────────────────────────────────────
+  hygiene:
+    name: Hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Shellcheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck scripts/*.sh .claude/hooks/*.sh
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-path: .github/gitleaks.toml
+
+  # ───────────────────────────────────────────────────────────────────
+  # All-green gate. Required check in branch protection.
+  # ───────────────────────────────────────────────────────────────────
+  ci-green:
+    name: CI green
+    runs-on: ubuntu-latest
+    needs: [typescript, python, hygiene]
+    if: always()
+    steps:
+      - name: Decide
+        run: |
+          if [ "${{ needs.typescript.result }}" != "success" ] || \
+             [ "${{ needs.python.result }}" != "success" ] || \
+             [ "${{ needs.hygiene.result }}" != "success" ]; then
+            echo "One or more required jobs did not succeed." >&2
+            exit 1
+          fi
+          echo "All required jobs succeeded."
