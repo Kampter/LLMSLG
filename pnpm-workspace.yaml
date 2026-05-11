@@ -9,7 +9,7 @@ packages:
 # Catalog: single source of truth for shared dep versions.
 # Reference in package.json as: "react": "catalog:".
 catalog:
-  typescript: '^5.6.3'
+  typescript: '^6.0.3'
   '@types/node': '^22.9.0'
   vitest: '^2.1.5'
   tsx: '^4.19.2'
