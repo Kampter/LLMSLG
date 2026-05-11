@@ -11,7 +11,7 @@ dependencies = [
     "shared",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
-    "pydantic>=2.9.0",
+    "pydantic>=2.13.4",
     "sqlalchemy>=2.0.35",
     "aiosqlite>=0.20.0",
     "structlog>=24.4.0",
