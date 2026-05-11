@@ -8,7 +8,7 @@ authors = [{ name = "LLMSLG Team" }]
 license = { text = "TBD" }
 
 dependencies = [
-    "pydantic>=2.9.0",
+    "pydantic>=2.13.4",
     "typing-extensions>=4.12.0",
 ]
 
