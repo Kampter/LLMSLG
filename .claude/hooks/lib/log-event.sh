@@ -25,6 +25,16 @@ set -uo pipefail
 
 extra_json="${1:-}"
 [ -z "$extra_json" ] && extra_json='{}'
+
+# Validate caller-supplied extras up front. If $extra_json is malformed,
+# drop it (don't take the whole audit line down with it) — the base
+# common-field record still gets emitted so the audit channel stays alive.
+if command -v jq >/dev/null 2>&1; then
+  if ! printf '%s' "$extra_json" | jq -e . >/dev/null 2>&1; then
+    extra_json='{}'
+  fi
+fi
+
 project_dir="${CLAUDE_PROJECT_DIR:-$PWD}"
 log_dir="$project_dir/.claude/.tmp/hooks"
 mkdir -p "$log_dir" 2>/dev/null || exit 0

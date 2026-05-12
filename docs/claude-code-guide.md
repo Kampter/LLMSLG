@@ -130,18 +130,35 @@ Installed subagents:
 Hooks are deterministic shell scripts wired to lifecycle events. Wiring is in
 `.claude/settings.json` under the `hooks` key.
 
-| Hook                        | Event                 | Effect                                           |
-| --------------------------- | --------------------- | ------------------------------------------------ |
-| `post-edit-format.sh`       | `PostToolUse`         | Format the file Claude just edited.              |
-| `pre-bash-deny-secrets.sh`  | `PreToolUse`          | Block secret-leaking or destructive shells.      |
-| `session-start-context.sh`  | `SessionStart`        | Inject the session banner.                       |
-| `stop-summary.sh`           | `Stop`                | Append a one-line event to a local log.          |
-| `user-prompt-router.sh`     | `UserPromptExpansion` | Gate `/release` and `/deploy`.                   |
-| `user-prompt-detect-dev.sh` | `UserPromptSubmit`    | Block dev-style prompts on `main`; read-only OK. |
-| `worktree-create.sh`        | `WorktreeCreate`      | Create the worktree and copy `.env*` files.      |
+| Hook                        | Event                 | Effect                                              |
+| --------------------------- | --------------------- | --------------------------------------------------- |
+| `post-edit-format.sh`       | `PostToolUse`         | Format the file Claude just edited.                 |
+| `pre-bash-deny-secrets.sh`  | `PreToolUse`          | Block secret-leaking or destructive shells; audits. |
+| `session-start-context.sh`  | `SessionStart`        | Inject the session banner; prune audit logs > 30d.  |
+| `stop-summary.sh`           | `Stop`                | Per-turn audit line via `lib/log-event.sh`.         |
+| `subagent-stop-log.sh`      | `SubagentStop`        | Audit-log subagent finish (agent_id, agent_type).   |
+| `session-end-log.sh`        | `SessionEnd`          | Audit-log session terminator (reason).              |
+| `user-prompt-router.sh`     | `UserPromptExpansion` | Gate `/release` and `/deploy`; audit each match.    |
+| `user-prompt-detect-dev.sh` | `UserPromptSubmit`    | Block dev-style prompts on `main`; read-only OK.    |
+| `worktree-create.sh`        | `WorktreeCreate`      | Create the worktree and copy `.env*` files.         |
+
+Plus one helper not wired directly:
+
+| Helper             | Effect                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------- |
+| `lib/log-event.sh` | Append one JSONL line to `.claude/.tmp/hooks/YYYY-MM-DD.jsonl`. Shared by every audit-aware hook. |
 
 Hard rule (2026 best practice): block at submit time, not at write time. Let
 Claude finish a pass and then validate.
+
+#### Audit log
+
+All hooks write through `lib/log-event.sh`. Layout: one file per UTC day at
+`.claude/.tmp/hooks/YYYY-MM-DD.jsonl`, gitignored, pruned after 30 days by
+`session-start-context.sh`. Common fields per record: `v`, `ts`, `session_id`,
+`transcript_path`, `hook_event_name`, `cwd`, plus `permission_mode` when the
+payload has it. Block events log only a `reason_tag` — raw commands and
+prompts stay in the transcript so the audit line is PII-clean.
 
 ## Slash commands (`.claude/commands/*.md`)
 

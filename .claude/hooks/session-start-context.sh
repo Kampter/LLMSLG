@@ -12,7 +12,9 @@ cd "$project_dir" 2>/dev/null || exit 0
 
 # Audit-log retention: prune daily files older than 30 days. Cheap to run
 # on every session start, idempotent, never blocks. Done before anything
-# else so a corrupted log dir can't take down the banner.
+# else so a corrupted log dir can't take down the banner. `-mtime +30` is
+# "30 days since last write"; for our append-only daily files (each only
+# touched on its own UTC date) that's effectively "30 days since creation".
 find "$project_dir/.claude/.tmp/hooks" -name '*.jsonl' -type f -mtime +30 -delete 2>/dev/null || true
 
 # SessionStart payload (consumed both for audit logging and field extraction).

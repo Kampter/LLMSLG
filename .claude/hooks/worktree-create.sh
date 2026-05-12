@@ -37,8 +37,13 @@ mkdir -p "$(dirname "$target")" >&2 || {
 }
 
 # 幂等: 已经存在就复用，不重新 add。
-# macOS 上 /tmp 与 /var/folders/... 是符号链接到 /private/...，所以两边
-# 都用 cd + pwd -P 解析到真实路径再比较。
+# 两段检查:
+#   1. `.git` 标记(快路径,常见情况):worktree 里 `.git` 是 file/dir,任一
+#      存在即说明 worktree 已就位。
+#   2. `git worktree list --porcelain` 扫描(慢路径,symlink 兜底):macOS
+#      上 `/tmp` 与 `/var/folders/...` 是 `/private/...` 的 symlink,git
+#      存的是 realpath; raw grep 永远不会命中,所以两边都用 `cd … pwd -P`
+#      解析到真实路径再比对。
 target_real=""
 if [ -d "$target" ] || [ -L "$target" ]; then
   target_real="$(cd "$target" 2>/dev/null && pwd -P)"

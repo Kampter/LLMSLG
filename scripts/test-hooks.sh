@@ -257,7 +257,7 @@ payload=$(jq -nc --arg n "feature/x" '{name: $n}')
 out=$(printf '%s' "$payload" | CLAUDE_PROJECT_DIR="$project" bash .claude/hooks/worktree-create.sh 2>/dev/null || true)
 expected="$project/.claude/worktrees/feature/x"
 if [ "$out" = "$expected" ] \
-  && [ -d "$expected/.git" ] || [ -f "$expected/.git" ]; then
+  && { [ -d "$expected/.git" ] || [ -f "$expected/.git" ]; }; then
   if [ -f "$expected/.env" ]; then
     ok "worktree-create happy path (path, worktree exists, .env copied)"
   else

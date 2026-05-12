@@ -374,6 +374,9 @@ ok "command references scanned"
 #
 # The schema is vendored in scripts/schemas/ so lint works offline.
 # Refresh instructions live in scripts/schemas/README.md.
+# Requires `check-jsonschema` from the `dev` dependency group (installed
+# by `pnpm bootstrap` or `uv sync --all-groups`). Missing-binary degrades
+# to a warning so a stripped-down env doesn't trip lint.
 # ---------------------------------------------------------------------------
 step "settings.json ↔ vendored schema"
 
@@ -384,16 +387,16 @@ if [ ! -f "$schema" ]; then
   wrn "$schema missing; skipping JSON-schema validation"
 elif [ ! -f "$target" ]; then
   err "$target missing"
-elif command -v uv >/dev/null 2>&1; then
-  if uv run --no-sync check-jsonschema --schemafile "$schema" "$target" >/dev/null 2>&1; then
-    ok "settings.json conforms to claude-code schema"
-  else
-    err "settings.json fails JSON-schema validation:"
-    uv run --no-sync check-jsonschema --schemafile "$schema" "$target" 2>&1 \
-      | sed 's/^/    /' >&2 || true
-  fi
-else
+elif ! command -v uv >/dev/null 2>&1; then
   wrn "uv not installed; skipping JSON-schema validation"
+elif ! uv run --no-sync check-jsonschema --version >/dev/null 2>&1; then
+  wrn "check-jsonschema missing from .venv; run 'uv sync --all-groups' to enable schema validation"
+elif uv run --no-sync check-jsonschema --schemafile "$schema" "$target" >/dev/null 2>&1; then
+  ok "settings.json conforms to claude-code schema"
+else
+  err "settings.json fails JSON-schema validation:"
+  uv run --no-sync check-jsonschema --schemafile "$schema" "$target" 2>&1 \
+    | sed 's/^/    /' >&2 || true
 fi
 
 # ---------------------------------------------------------------------------
