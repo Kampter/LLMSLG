@@ -49,7 +49,7 @@ class OpenAIClient:
             messages=payload,
         )
         content = response.choices[0].message.content
-        if content is None:
+        if not content:
             msg = "Provider returned an empty completion."
             raise RuntimeError(msg)
         return content

@@ -6,6 +6,7 @@ import io
 from collections import deque
 from collections.abc import Callable, Iterable, Sequence
 
+import pytest
 from llmagent.cli import run_chat
 from llmagent.llm import LLMClient, Message
 
@@ -61,7 +62,9 @@ def test_run_chat_records_full_messages_per_turn() -> None:
         read_input=_reader_from(["one", "two"]),
         out=io.StringIO(),
     )
+    first_call_roles = [m.role for m in fake.calls[0]]
     second_call_roles = [m.role for m in fake.calls[1]]
+    assert first_call_roles == ["system", "user"]
     assert second_call_roles == ["system", "user", "assistant", "user"]
 
 
@@ -76,12 +79,13 @@ def test_run_chat_ignores_blank_input() -> None:
     assert len(fake.calls) == 1
 
 
-def test_run_chat_quits_on_command() -> None:
+@pytest.mark.parametrize("cmd", [":quit", ":q", ":exit"])
+def test_run_chat_quits_on_command(cmd: str) -> None:
     fake = FakeLLM(replies=[])
     history = run_chat(
         fake,
         "sys",
-        read_input=_reader_from([":quit"]),
+        read_input=_reader_from([cmd]),
         out=io.StringIO(),
     )
     assert history == [Message("system", "sys")]
