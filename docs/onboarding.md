@@ -53,7 +53,8 @@ run as long-lived processes; check their stdout for boot messages.
 Pick something tiny:
 
 1. Open an issue or find an open TODO: `rg 'TODO|FIXME' apps packages python-packages`.
-2. Start a task: `/start-task <short-desc>`. This creates a worktree + branch.
+2. Start a task: `/start-task <short-desc>`. This creates a worktree + branch
+   (all code changes happen in worktrees, never on `main`).
 3. Edit something. Run the quality gate locally: `pnpm check`.
 4. Commit with a clear, present-tense message.
 5. `/open-pr` inside Claude Code to validate, push, and open a draft PR.

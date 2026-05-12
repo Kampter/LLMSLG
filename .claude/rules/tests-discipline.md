@@ -35,8 +35,8 @@ paths:
 
 ## Speed budget
 
-- Unit tests: < 100 ms each. If slower, mark `@pytest.mark.slow` or
-  `test.concurrent` opt-out.
+- Unit tests: < 100 ms each. If slower, mark `@pytest.mark.slow` (Python)
+  or `test.concurrent` (Vitest) opt-out.
 - Integration tests are colocated with code and run via the package's test
   command (`uv run pytest` or `pnpm test`). Mark slow ones `@pytest.mark.slow`
   or `test.concurrent` opt-out.
