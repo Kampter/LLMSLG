@@ -1,11 +1,20 @@
-"""LLM-driven client agent that plays the LLMSLG game.
+"""LLM-driven client agent — basic conversational scaffold.
 
-This package is intentionally empty at the harness stage. Real modules will
-appear under: agent.py, perception/, decision/, action/, llm/, memory/, prompts/.
-
-Do not commit business logic to __init__.py — keep this file as a marker plus
-public API re-exports only.
+Public API surface; deeper modules will land under llm/, perception/,
+decision/, action/, memory/, prompts/ as planned in CLAUDE.md.
 """
 
+from __future__ import annotations
+
+from llmagent.config import AgentConfig
+from llmagent.llm import LLMClient, Message, OpenAIClient, Role
+
 __version__ = "0.0.1"
-__all__: list[str] = []
+__all__ = [
+    "AgentConfig",
+    "LLMClient",
+    "Message",
+    "OpenAIClient",
+    "Role",
+    "__version__",
+]
