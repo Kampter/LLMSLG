@@ -54,7 +54,17 @@
       "Bash(echo:*)",
       "Bash(printf:*)",
       "Bash(jq:*)",
-      "Bash(mkdir -p:*)"
+      "Bash(mkdir -p:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh auth status)",
+      "Bash(git push -u origin:*)",
+      "Bash(git worktree:*)",
+      "Bash(git fetch:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git config user.email)",
+      "Bash(git config user.name)"
     ],
     "deny": [
       "Bash(rm -rf /*)",
@@ -159,6 +169,28 @@
             "type": "command",
             "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-router.sh",
             "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-detect-dev.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/worktree-create.sh",
+            "timeout": 30
           }
         ]
       }

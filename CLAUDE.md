@@ -85,6 +85,15 @@ for something already automated:
 - Refactors come with passing tests _before_ the refactor and identical tests after.
 - Plan mode is on by default for tasks above a few files; let it propose, then
   ask the user before executing.
+- **All code changes happen in worktrees, not on `main`.** No exceptions —
+  including typos, dependabot reviews, and one-line fixes. The
+  `UserPromptSubmit` hook blocks dev-style prompts on `main`; users must run
+  `/start-task <slug>` first. Read-only sessions on `main` remain fine. See
+  `.claude/rules/worktree-discipline.md`.
+- **Maintain `.claude/TASK.md` inside each worktree.** Append a decision line
+  when you choose between approaches, accept a trade-off, receive new user
+  constraints, or finish a milestone. `/open-pr` reads it to populate the PR
+  description and refuses to push without Goal + Key decisions filled in.
 
 ## Things this repo has learned the hard way
 

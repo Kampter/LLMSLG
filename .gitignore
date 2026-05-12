@@ -69,6 +69,8 @@ Thumbs.db
 .claude/sessions/
 .claude/cache/
 .claude/.tmp/
+.claude/worktrees/
+.claude/TASK.md
 CLAUDE.local.md
 
 # ─── Logs ───────────────────────────────────────────────────────────────────

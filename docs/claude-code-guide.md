@@ -124,13 +124,15 @@ Installed subagents:
 Hooks are deterministic shell scripts wired to lifecycle events. Wiring is in
 `.claude/settings.json` under the `hooks` key.
 
-| Hook                       | Event                 | Effect                                      |
-| -------------------------- | --------------------- | ------------------------------------------- |
-| `post-edit-format.sh`      | `PostToolUse`         | Format the file Claude just edited.         |
-| `pre-bash-deny-secrets.sh` | `PreToolUse`          | Block secret-leaking or destructive shells. |
-| `session-start-context.sh` | `SessionStart`        | Inject the session banner.                  |
-| `stop-summary.sh`          | `Stop`                | Append a one-line event to a local log.     |
-| `user-prompt-router.sh`    | `UserPromptExpansion` | Gate `/release` and `/deploy`.              |
+| Hook                        | Event                 | Effect                                           |
+| --------------------------- | --------------------- | ------------------------------------------------ |
+| `post-edit-format.sh`       | `PostToolUse`         | Format the file Claude just edited.              |
+| `pre-bash-deny-secrets.sh`  | `PreToolUse`          | Block secret-leaking or destructive shells.      |
+| `session-start-context.sh`  | `SessionStart`        | Inject the session banner.                       |
+| `stop-summary.sh`           | `Stop`                | Append a one-line event to a local log.          |
+| `user-prompt-router.sh`     | `UserPromptExpansion` | Gate `/release` and `/deploy`.                   |
+| `user-prompt-detect-dev.sh` | `UserPromptSubmit`    | Block dev-style prompts on `main`; read-only OK. |
+| `worktree-create.sh`        | `WorktreeCreate`      | Create the worktree and copy `.env*` files.      |
 
 Hard rule (2026 best practice): block at submit time, not at write time. Let
 Claude finish a pass and then validate.
@@ -139,17 +141,49 @@ Claude finish a pass and then validate.
 
 These are explicit, you-typed-it-on-purpose commands.
 
-| Command    | What it does                                               |
-| ---------- | ---------------------------------------------------------- |
-| `/check`   | Run the quality gate; report pass/fail with first failure. |
-| `/ship`    | Run checks + draft a PR description. Does NOT push.        |
-| `/onboard` | Walk a new contributor through the repo.                   |
-| `/tour`    | Quick refresher for returning contributors.                |
-| `/clean`   | Wipe caches and build artefacts.                           |
+| Command       | What it does                                                   |
+| ------------- | -------------------------------------------------------------- |
+| `/check`      | Run the quality gate; report pass/fail with first failure.     |
+| `/ship`       | Run checks + draft a PR description. Does NOT push.            |
+| `/onboard`    | Walk a new contributor through the repo.                       |
+| `/tour`       | Quick refresher for returning contributors.                    |
+| `/clean`      | Wipe caches and build artefacts.                               |
+| `/start-task` | Create a worktree + branch + `.claude/TASK.md` for a new task. |
+| `/open-pr`    | Validate TASK.md, run checks, push, open a draft PR (gated).   |
 
 Note: as of Claude Code v2.1.101, commands and skills are unified. We keep
 both directories: `commands/` for things you trigger by typing `/name`,
 `skills/` for things Claude can invoke automatically.
+
+## Worktree-first development
+
+Code edits live in `.claude/worktrees/<user>/<slug>/`, never on `main`.
+Read-only sessions on `main` (explain / why / how does / list / review …)
+remain fine.
+
+| Trigger                    | Effect                                                                      |
+| -------------------------- | --------------------------------------------------------------------------- |
+| Dev-style prompt on `main` | `UserPromptSubmit` hook **blocks** with a reason pointing at `/start-task`. |
+| Read-only prompt on `main` | Allowed.                                                                    |
+| `/start-task <slug>`       | Creates worktree + branch + `.claude/TASK.md`. Asks for the goal.           |
+| `EnterWorktree` (built-in) | Drops the session into the new worktree.                                    |
+| `/open-pr`                 | Validates TASK.md, runs checks, pushes, opens a draft PR.                   |
+
+**`.claude/TASK.md` discipline.** Per worktree, gitignored. Records Goal,
+Key decisions, Trade-offs, Open questions. `/open-pr` injects the first
+three sections into the PR description and refuses to push if Goal or Key
+decisions are empty. Reviewers receive the reasoning, not just the diff.
+
+**Dependencies per worktree.** Each worktree installs its own
+`node_modules` and `.venv` — no symlinks. Run `pnpm bootstrap` after
+entering a new worktree (~1-2 min). `.gitignore` already excludes
+`node_modules/`, `.venv/`, `.turbo/`, so dependency directories never
+appear in PRs.
+
+**Caveats.** `apps/landing` dev server hard-codes port 3000 — parallel
+`pnpm dev` across worktrees collides; run one at a time. `apps/server`'s
+SQLite default path may also collide across parallel `uv run server`
+processes.
 
 ## What is NOT in this harness
 
