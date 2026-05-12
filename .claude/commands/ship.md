@@ -50,3 +50,9 @@ Hard rules:
 - Do not push, do not open a PR, do not tag.
 - If checks fail, do not write a PR description.
 - Don't include test output verbatim in the PR draft.
+
+## See also
+
+- `/open-pr` — when ready to actually push and open the draft PR. `/ship`
+  only drafts the description; `/open-pr` runs the validation + remote
+  actions, including the `.claude/TASK.md` gate.

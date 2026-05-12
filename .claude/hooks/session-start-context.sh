@@ -45,6 +45,12 @@ Quality gate: pnpm check
 EOF
 )
 
+if [ "$branch" = "main" ]; then
+  context_msg="$context_msg
+
+>> On main: code edits are BLOCKED here. Run /start-task <slug> to enter a worktree."
+fi
+
 # JSON output adds the banner to the model's context for this session.
 if command -v jq >/dev/null 2>&1; then
   printf '%s' "$context_msg" | jq -Rs '{

@@ -12,6 +12,31 @@ change.
 
 ## Pull request hygiene
 
+### Start a task
+
+All code changes happen in a worktree, not on `main`. Read-only sessions on
+`main` are fine; the moment you'd edit a file, you need a worktree.
+
+1. `/start-task <slug>` creates a worktree at
+   `.claude/worktrees/<user>/<slug>`, a matching branch, and an empty
+   `.claude/TASK.md`. Answer Claude's one-line question about the goal.
+2. Inside the worktree, run `pnpm bootstrap` once (~1-2 min). Worktrees do
+   not share `node_modules` or `.venv` — fresh install is by design.
+3. While working, append `.claude/TASK.md` whenever you choose between
+   approaches, accept a trade-off, get a new user constraint, or finish a
+   milestone. The format is `- <YYYY-MM-DD> <decision> — Why: <reason>`.
+   Skip trivial things (renames, typos); record only what a reviewer would
+   ask "why?" about.
+4. When the change is ready, run `/open-pr`. It validates `TASK.md`, runs
+   `scripts/check.sh`, then asks for two separate confirmations (push +
+   `gh pr create --draft`).
+5. After the PR merges, clean up the worktree:
+   `git worktree remove .claude/worktrees/<user>/<slug>`.
+
+PR description's **Goal / Key decisions / Trade-offs** sections are
+populated from `TASK.md` automatically — this is the point of the file.
+Reviewers see your reasoning, not just the diff.
+
 - One coherent change per PR. Small PRs get reviewed faster than big ones.
 - Branch name: `<yourname>/<slug>` (e.g. `alice/agent-retry`).
 - Title: 60 chars, present tense, imperative. ("add retry to LLMClient",

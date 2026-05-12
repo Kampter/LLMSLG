@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+#
+# UserPromptSubmit hook: 在 main 上检测开发关键词的 prompt 时硬 block，
+# 引导用户先 `/start-task <slug>` 进 worktree。
+#
+# 关键约束:
+# - block 后 reason 给用户看，Claude 下一轮看不到 reason，prompt 也被擦除。
+# - additionalContext 与 decision:block 互斥，本 hook 只走 block 路线。
+# - 反向关键词（read-only intent）走 exit 0 放行。
+# - Slash command 走 UserPromptExpansion，理论上不进 UserPromptSubmit，
+#   但 `/ 开头早退` 作为防御性兜底。
+set -uo pipefail
+
+payload="$(cat || true)"
+
+prompt=""
+if command -v jq >/dev/null 2>&1 && [ -n "$payload" ]; then
+  prompt="$(printf '%s' "$payload" | jq -r '.prompt // empty' 2>/dev/null || true)"
+fi
+[ -z "$prompt" ] && exit 0
+
+# 防御性: 以 / 开头的 prompt 当 slash command 看待，不拦。
+case "$prompt" in
+  /*) exit 0 ;;
+esac
+
+project_dir="${CLAUDE_PROJECT_DIR:-$PWD}"
+branch="$(git -C "$project_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
+[ "$branch" != "main" ] && exit 0
+
+# 反向关键词先看: 只读意图直接放行。
+if printf '%s' "$prompt" | grep -E -iq \
+  '\b(explain|why|how does|how do|show me|what does|what is|list|find|where is|describe|summari[sz]e|review|audit|read|inspect|trace|plan|design|discuss|search)\b'; then
+  exit 0
+fi
+
+# 开发动词触发集 (硬拦截模式，包含小修动词)。
+if ! printf '%s' "$prompt" | grep -E -iq \
+  '\b(implement|add|fix|refactor|create|build|update|change|modify|rewrite|migrate|introduce|remove|delete|rename|extract|inline|port|wire|hook up|scaffold|edit|write|replace|tweak|adjust|patch|bump|cleanup|clean up|reorganize|reorder|move)\b'; then
+  exit 0
+fi
+
+reason="代码改动必须在 worktree 里做，main 上禁止编辑（即便是 typo / dependabot patch）。
+
+请先创建 worktree：
+  /start-task <slug>
+
+例如：/start-task fix-readme-typo  或  /start-task agent-retry
+
+然后在 worktree 里重新发送你的请求。
+如果是只读探索（解释、审计、阅读），rephrase 成 read-only 措辞即可（如 'explain X' 而不是 'fix X'）。"
+
+if command -v jq >/dev/null 2>&1; then
+  printf '%s' "$reason" | jq -Rs '{decision: "block", reason: .}'
+else
+  printf '{"decision":"block","reason":"main 上禁止开发，先 /start-task <slug>。"}\n'
+fi
+
+exit 0
