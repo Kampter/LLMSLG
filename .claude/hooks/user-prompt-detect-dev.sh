@@ -28,9 +28,18 @@ project_dir="${CLAUDE_PROJECT_DIR:-$PWD}"
 branch="$(git -C "$project_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
 [ "$branch" != "main" ] && exit 0
 
+# Early exit if prompt starts with an interrogative word (question / clarification
+# intent). This is a strong signal of read-only intent that catches phrasings
+# like "what changed in this PR", "should we delete X", "is this safe to remove"
+# without enumerating every variant in the keyword list below.
+if printf '%s' "$prompt" | grep -E -iq \
+  '^[[:space:]]*(what|which|who|whose|where|when|why|how|is|are|am|was|were|do|does|did|has|have|had|can|could|should|would|will|may|might|shall)\b'; then
+  exit 0
+fi
+
 # 反向关键词先看: 只读意图直接放行。
 if printf '%s' "$prompt" | grep -E -iq \
-  '\b(explain|why|how does|how do|show me|what does|what is|list|find|where is|describe|summari[sz]e|review|audit|read|inspect|trace|plan|design|discuss|search)\b'; then
+  '\b(explain|why|how does|how do|show me|what does|what is|list|find|where is|describe|summari[sz]e|review|audit|read|inspect|trace|plan|design|discuss|search|tell me|walk me)\b'; then
   exit 0
 fi
 

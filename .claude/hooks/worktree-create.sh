@@ -20,6 +20,15 @@ if [ -z "$name" ]; then
   exit 1
 fi
 
+# Validate name to prevent path traversal and git flag injection.
+# Allow A-Z a-z 0-9 dot underscore slash dash; reject leading '-' and any '..'.
+if [[ ! "$name" =~ ^[A-Za-z0-9._/-]+$ ]] \
+  || [[ "$name" == -* ]] \
+  || [[ "$name" == *..* ]]; then
+  echo "worktree-create: invalid name '$name' (chars: [A-Za-z0-9._/-], no leading '-', no '..')" >&2
+  exit 1
+fi
+
 branch="$name"
 target="$project_dir/.claude/worktrees/$name"
 mkdir -p "$(dirname "$target")" >&2 || {

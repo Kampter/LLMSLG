@@ -2,7 +2,7 @@
 name: open-pr
 description: Validate TASK.md, run checks, push, and open a draft PR via gh. Step-by-step confirmation.
 argument-hint: '(no arguments)'
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git branch:*), Bash(git push -u origin*), Bash(gh pr create*), Bash(gh pr view*), Bash(gh auth status), Bash(./scripts/check.sh:*), Bash(bash scripts/check.sh:*), Read
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git rev-parse:*), Bash(git rev-list:*), Bash(git branch:*), Bash(git push -u origin:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh auth status), Bash(./scripts/check.sh:*), Bash(bash scripts/check.sh:*), Read
 ---
 
 # /open-pr
@@ -17,16 +17,32 @@ announced and requires explicit user confirmation.**
    feature branch first."
 2. **Ahead gate.** Run `git rev-list --count origin/main..HEAD`. If 0,
    refuse: "No commits to push. Make at least one commit first."
-3. **TASK.md gate (Hard fail).** Read `.claude/TASK.md`:
-   - File missing → "TASK.md missing. Recreate via `/start-task` or write
-     it manually with Goal / Key decisions / Trade-offs sections."
-   - `## Goal` section empty (no non-blank content under the heading) →
-     refuse with that specific message.
-   - `## Key decisions` section empty (no `-` bullets under the heading) →
-     refuse. Even a trivial decision counts ("Trivial: no alternatives
-     considered."), but the section cannot be totally empty.
-   - `## Trade-offs accepted` may be empty (some tasks have no real
-     trade-offs), but the section heading must exist.
+3. **TASK.md gate (Hard fail).** Read `.claude/TASK.md`. Parsing rules
+   below are strict — the implementation should not be clever:
+   - File missing → refuse: "TASK.md missing. Recreate via `/start-task`
+     or write it manually with Goal / Key decisions / Trade-offs sections."
+   - Required headings must be ATX H2, matched exactly by these regexes
+     (case-sensitive, anchored to start of line, with only optional trailing
+     whitespace):
+     - `^## Goal\s*$`
+     - `^## Key decisions\s*$`
+     - `^## Trade-offs accepted\s*$`
+       `### Goal`, Setext (`Goal\n====`), `## goal` (lowercase), or any
+       indented heading is REJECTED with: "TASK.md headings must use ATX H2
+       exactly (`## Goal`, `## Key decisions`, `## Trade-offs accepted`)."
+   - For each required heading, the "body" is every line between that
+     heading and the next `^## ` line (or EOF), with leading and trailing
+     whitespace stripped.
+   - `Goal` body empty after stripping → refuse: "## Goal section is empty.
+     Fill in one sentence describing the task's goal."
+   - `Key decisions` body has no line starting with `- ` (a literal dash +
+     space at the start of a line, ignoring leading indent) → refuse:
+     "## Key decisions has no bullets. Add at least one entry:
+     `- <YYYY-MM-DD> <decision> — Why: <reason>`. Trivial fixes can write
+     `- Trivial: no alternatives considered.`"
+   - `Trade-offs accepted` heading must exist; body may be empty. If the
+     heading is missing entirely → refuse: "## Trade-offs accepted heading
+     missing (body may be empty, but the heading must exist)."
 4. **Auth gate.** Run `gh auth status`. On failure, stop and ask the user
    to run `gh auth login`.
 5. **Quality gate.** Run `bash scripts/check.sh`. On any failure, stop and
