@@ -1,0 +1,11 @@
+{
+  "session_id": "sess-fixture-001",
+  "transcript_path": "/Users/dev/.claude/projects/llmslg/sess-fixture-001/transcript.jsonl",
+  "cwd": "/Users/dev/proj/llmslg",
+  "hook_event_name": "UserPromptExpansion",
+  "expansion_type": "slash_command",
+  "command_name": "ship",
+  "command_args": "",
+  "command_source": "project",
+  "prompt": "Prepare the current branch for review."
+}

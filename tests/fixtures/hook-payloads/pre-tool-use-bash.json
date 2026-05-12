@@ -1,0 +1,10 @@
+{
+  "session_id": "sess-fixture-001",
+  "transcript_path": "/Users/dev/.claude/projects/llmslg/sess-fixture-001/transcript.jsonl",
+  "cwd": "/Users/dev/proj/llmslg",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": { "command": "ls -la" },
+  "tool_use_id": "toolu_01ABC"
+}

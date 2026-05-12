@@ -37,13 +37,21 @@ mkdir -p "$(dirname "$target")" >&2 || {
 }
 
 # 幂等: 已经存在就复用，不重新 add。
-if [ -d "$target/.git" ]; then
+# macOS 上 /tmp 与 /var/folders/... 是符号链接到 /private/...，所以两边
+# 都用 cd + pwd -P 解析到真实路径再比较。
+target_real=""
+if [ -d "$target" ] || [ -L "$target" ]; then
+  target_real="$(cd "$target" 2>/dev/null && pwd -P)"
+fi
+
+if [ -d "$target/.git" ] || [ -f "$target/.git" ]; then
   echo "worktree-create: reusing existing worktree at $target" >&2
   printf '%s\n' "$target"
   exit 0
 fi
-if git -C "$project_dir" worktree list --porcelain 2>/dev/null \
-   | grep -q "^worktree $target$"; then
+if [ -n "$target_real" ] \
+  && git -C "$project_dir" worktree list --porcelain 2>/dev/null \
+   | awk -v t="$target_real" '$1=="worktree" && $2==t {found=1} END {exit found?0:1}'; then
   echo "worktree-create: reusing existing worktree at $target" >&2
   printf '%s\n' "$target"
   exit 0
@@ -65,12 +73,14 @@ else
 fi
 
 # 拷 gitignored 但开发需要的本地文件。
+env_copied=0
 copy_if_present() {
   local rel="$1"
   if [ -f "$project_dir/$rel" ]; then
     mkdir -p "$target/$(dirname "$rel")"
     cp "$project_dir/$rel" "$target/$rel"
     echo "worktree-create: copied $rel" >&2
+    env_copied=$((env_copied + 1))
   fi
 }
 copy_if_present ".env"
@@ -81,6 +91,26 @@ for app in apps/llmagent apps/server apps/landing; do
 done
 
 echo "worktree-create: ready at $target. Run 'pnpm bootstrap' inside before editing." >&2
+
+# Audit log (silent; writes to a file, never to stdout). New-branch vs
+# attach-existing-branch isn't distinguished here because the git output
+# captured above already covers that nuance for the human reader.
+log_event="$project_dir/.claude/hooks/lib/log-event.sh"
+if [ -f "$log_event" ]; then
+  extra="$(jq -nc \
+      --arg name "$name" \
+      --arg branch "$branch" \
+      --arg target "$target" \
+      --argjson n "$env_copied" \
+      '{
+        hook_event_name: "WorktreeCreate",
+        worktree_name: $name,
+        branch: $branch,
+        worktree_path: $target,
+        env_files_copied: $n
+      }' 2>/dev/null || printf '{"hook_event_name":"WorktreeCreate"}')"
+  printf '%s' "$payload" | bash "$log_event" "$extra" >/dev/null 2>&1 || true
+fi
 
 # 协议要求: 只有这一行 (一行绝对路径 + \n)。
 printf '%s\n' "$target"

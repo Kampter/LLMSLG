@@ -14,3 +14,5 @@ uv.lock
 .claude/sessions/
 .claude/cache/
 .claude/projects/
+# Vendored upstream schema: keep byte-identical so `curl` refreshes apply cleanly.
+scripts/schemas/*.json
