@@ -46,7 +46,10 @@ decide what to do.
 
 ## Rules
 
-- Don't edit files.
+- You are read-only on source. Don't edit files. The only Bash side-effects
+  permitted are the ones a test command produces (cache writes, coverage
+  reports). No `git` mutations, no redirects outside the test runner, no
+  network beyond what tests themselves do.
 - Don't run integration / e2e suites unless explicitly told to.
 - Don't reformat output beyond the summary above.
 - If a tool errors before tests run (e.g. import error), say so plainly and

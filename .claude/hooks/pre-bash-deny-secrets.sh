@@ -47,11 +47,35 @@ case "$cmd" in
 esac
 
 # Heuristic: writing/reading a real .env file via shell.
-# Allowlist .env.example / .env.sample / .env.template (publishable placeholders).
-if printf '%s' "$cmd" \
-  | grep -E -q '(\b(cat|less|more|head|tail|bat|xxd|od|hexdump)\b[[:space:]]+([^|;&]*[/[:space:]])?\.env\b|>[[:space:]]*([^|;&]*[/[:space:]])?\.env\b)' \
-  && ! printf '%s' "$cmd" \
-  | grep -E -q '\.env\.(example|sample|template)\b'; then
+# Token-level detection: split the command into shell tokens and check each
+# one. A token is a "real dotenv" if it ends with `.env` or `.env.<suffix>`
+# where the suffix is NOT in {example, sample, template}. This blocks
+# bypasses like `cat .env.example .env` or `cp .env .env.example.bak` that
+# the previous whole-string allowlist let through.
+real_dotenv=$(printf '%s' "$cmd" | awk '
+BEGIN { real = 0 }
+{
+  gsub(/[;|&<>]/, " ");
+  n = split($0, tok, /[ \t]+/);
+  for (i = 1; i <= n; i++) {
+    t = tok[i];
+    gsub(/["\047]/, "", t);
+    if (match(t, /(^|\/)\.env(\.[A-Za-z0-9_-]+)?$/)) {
+      tail = substr(t, RSTART, RLENGTH);
+      sub(/^\//, "", tail);
+      if (tail == ".env" ||
+          (tail != ".env.example" && tail != ".env.sample" && tail != ".env.template")) {
+        real = 1;
+        exit;
+      }
+    }
+  }
+}
+END { if (real) print 1 }')
+
+if [ -n "$real_dotenv" ] \
+  && printf '%s' "$cmd" \
+  | grep -E -q '\b(cat|less|more|head|tail|bat|xxd|od|hexdump|grep|awk|sed|cp|mv|diff|rsync)\b|>>?[[:space:]]'; then
   deny "Refusing to read/write a real .env via shell (.env.example / .env.sample / .env.template are allowed). Use a real secrets tool for live values."
 fi
 

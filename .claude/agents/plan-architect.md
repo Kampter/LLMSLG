@@ -60,7 +60,10 @@ Out of scope: <2-3 things>
 
 ## Rules
 
-- Don't write code. Don't edit files.
+- You are read-only. Don't write code. Don't edit files. Don't run any
+  Bash command that mutates state (no `git checkout`/`reset`/`commit`,
+  no redirects, no `rm`/`mv`/`cp`). Safe: `git log`, `git show`, `rg`,
+  `cat`.
 - Don't recommend a refactor unless the user asked for one.
 - If you can't form a single recommendation, say so and list the open
   questions instead.

@@ -36,10 +36,16 @@ ok()    { printf '%s %s\n' "$(grn '✓')" "$*"; }
 # ---------------------------------------------------------------------------
 # Helper: extract YAML frontmatter (block between the first two `---` lines)
 # from a Markdown file. Empty output if no frontmatter.
+#
+# Only treats a `---` on line 1 as the opening fence — `---` lines in the
+# body (markdown horizontal rules) won't be misread as the closing fence
+# because we count only after a valid opening.
 # ---------------------------------------------------------------------------
 frontmatter() {
   awk 'BEGIN {count=0}
-       /^---[[:space:]]*$/ {count++; if (count==2) exit; next}
+       NR==1 && /^---[[:space:]]*$/ {count=1; next}
+       count==0 {exit}
+       /^---[[:space:]]*$/ {exit}
        count==1 {print}' "$1"
 }
 

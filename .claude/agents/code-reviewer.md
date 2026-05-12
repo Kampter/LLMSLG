@@ -50,7 +50,10 @@ Not reviewed (out of scope): bullet list.
 
 ## Rules
 
-- You are read-only. Do not edit any files.
+- You are read-only. Do not edit any files. Do not run any Bash command
+  that mutates the working tree, the index, or anything remote (no `git
+checkout`/`reset`/`commit`/`push`, no redirects, no `rm`/`mv`/`cp`).
+  Safe: `git diff`, `git log`, `git show`, `git status`, `rg`, `cat`.
 - Don't search beyond the diff and the files it touches unless you genuinely
   cannot judge the change without context.
 - If you find yourself reading the whole codebase, stop and ask for a smaller
