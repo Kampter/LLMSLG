@@ -14,6 +14,9 @@ paths = [
   '''(?i).*/CLAUDE\.md$''',
   '''(?i).*/SKILL\.md$''',
   '''(?i).*/docs/.*''',
+  # Harness self-tests pass shaped-but-fake credentials to deny-secrets hook
+  # to assert it blocks them. The fixtures are not real keys.
+  '''scripts/test-hooks\.sh$''',
 ]
 regexTarget = "match"
 regexes = [

@@ -1,18 +1,11 @@
 # LLMSLG — Claude Code Repo Constitution
 
 <!--
-Maintainer notes (stripped from Claude's context — block-level HTML comments
-do not enter the model's window):
-
-  - Keep this file < 100 lines. Boris (Head of Claude Code) targets ~2.5K
-    tokens. We target the same. If a section is growing, push detail into
-    `.claude/rules/`, a sub-CLAUDE.md, or a doc.
-  - Style rules go in `.claude/rules/`, not here — they auto-load only when
-    relevant, keeping context lean.
-  - Always-on rules (secrets, worktree discipline) live in `.claude/rules/`
-    without a `paths:` field. Do not duplicate them here.
-  - When you find Claude doing something wrong twice, prefer adding to the
-    relevant rule/skill over bloating this file (Compounding Engineering).
+Maintainer notes (HTML block comments are stripped from Claude's context).
+Targets: < 100 lines root, < 80 sub. Push detail to .claude/rules/, a
+sub-CLAUDE.md, or docs. Always-on rules (secrets, worktree) live in
+.claude/rules/ without `paths:` — don't duplicate here. When Claude makes
+the same mistake twice, add to the matching rule, not this file.
 -->
 
 ## What this repo is (WHAT)
@@ -41,13 +34,11 @@ uv run pytest apps/llmagent   # focused Python tests in one workspace member.
 pnpm --filter @llmslg/<name>  # focused TS tasks in one workspace package.
 ```
 
-**Verification feedback loop.** Before reporting any code task as done, run
-`pnpm check` (or `bash scripts/check.sh`) and confirm it is green. If you
-cannot verify a change end-to-end (e.g. UI-only behaviour), say so plainly
-rather than claim success.
+**Verification feedback loop.** Before reporting a code task done, run
+`pnpm check` (or `bash scripts/check.sh`) and confirm green. If you cannot
+verify end-to-end (e.g. UI-only behaviour), say so — don't claim success.
 
-If a command above fails on a clean clone, the harness is broken — fix that
-before anything else.
+If any command above fails on a clean clone, the harness is broken — fix that first.
 
 ## Tooling pins (do not silently change)
 
@@ -83,9 +74,16 @@ before anything else.
 ## Default to small, reversible steps
 
 Bug fixes touch only the buggy code path — no opportunistic refactors.
-Refactors come with passing tests before and after. For tasks above a few
-files, use plan mode; propose, then ask before executing. Code edits happen
-in a worktree (see `.claude/rules/worktree-discipline.md`), never on `main`.
+Refactors keep tests passing before and after. For tasks above a few files,
+use plan mode. Code edits happen in a worktree
+(see `.claude/rules/worktree-discipline.md`), never on `main`.
+
+## Verifying the harness itself
+
+The `.claude/` harness is code. Changing any rule, agent, skill, hook, or
+`settings.json` must pass `bash scripts/lint-claude.sh` (frontmatter,
+cross-refs, size limits) and `bash scripts/test-hooks.sh` (behavioural
+tests for every hook). Both run inside `scripts/check.sh` and CI.
 
 ## Compounding Engineering
 
