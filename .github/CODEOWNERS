@@ -1,29 +1,30 @@
 # Code owners for LLMSLG.
 #
-# When a PR touches a path here, the listed owner is automatically requested
-# for review. Use teams (@org/team) over individuals where possible.
-#
-# Fill these in once the team layout is known.
+# Required reviewers when a PR touches a path here.
+# Single-maintainer repo today; update when the team grows.
+# Syntax reference: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
 
-# Repository-wide default owner
-# *                           @your-org/maintainers
+# Repository-wide default
+*                              @Kampter
 
-# Claude harness
-# /.claude/                   @your-org/claude-harness
-# /CLAUDE.md                  @your-org/claude-harness
+# Claude harness — anyone changing how Claude sees this repo
+/.claude/                      @Kampter
+/CLAUDE.md                     @Kampter
+**/CLAUDE.md                   @Kampter
 
-# CI and tooling
-# /.github/                   @your-org/devx
-# /scripts/                   @your-org/devx
-# /turbo.json                 @your-org/devx
-# /pyproject.toml             @your-org/devx
-# /pnpm-workspace.yaml        @your-org/devx
+# CI, tooling, infrastructure
+/.github/                      @Kampter
+/scripts/                      @Kampter
+/turbo.json                    @Kampter
+/pyproject.toml                @Kampter
+/pnpm-workspace.yaml           @Kampter
+/.pre-commit-config.yaml       @Kampter
 
-# Apps
-# /apps/llmagent/             @your-org/agent
-# /apps/server/               @your-org/server
-# /apps/landing/              @your-org/web
+# Shared contracts (cross-package wire protocol)
+/packages/types/               @Kampter
+/python-packages/shared/       @Kampter
 
-# Shared contracts
-# /packages/types/            @your-org/protocol
-# /python-packages/shared/    @your-org/protocol
+# Apps (per-runtime ownership; collapse to maintainer until teams exist)
+/apps/llmagent/                @Kampter
+/apps/server/                  @Kampter
+/apps/landing/                 @Kampter

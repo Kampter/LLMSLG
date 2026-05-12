@@ -7,12 +7,6 @@ paths:
   - '**/*.test.tsx'
   - '**/*.test.py'
   - '**/test_*.py'
-globs:
-  - '**/tests/**'
-  - '**/*.test.ts'
-  - '**/*.test.tsx'
-  - '**/*.test.py'
-  - '**/test_*.py'
 ---
 
 # Testing rules

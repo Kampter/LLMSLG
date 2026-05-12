@@ -3,8 +3,6 @@ name: python-style
 description: Python style + correctness rules for this repo. Auto-loads when touching *.py.
 paths:
   - '**/*.py'
-globs:
-  - '**/*.py'
 ---
 
 # Python style rules

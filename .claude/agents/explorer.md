@@ -1,7 +1,7 @@
 ---
 name: explorer
 description: Read-only codebase exploration. Use when the main agent needs to answer "where is X" / "which files reference Y" / "how is Z implemented" without polluting the main context with grep output.
-tools: Read, Glob, Grep, Bash(rg:*), Bash(find:*), Bash(ls:*), Bash(git log:*), Bash(git blame:*)
+tools: Read, Glob, Grep, Bash
 model: claude-haiku-4-5-20251001
 ---
 
@@ -47,5 +47,11 @@ No prose, no advice, no recommendations. Just facts and pointers.
 
 ## Hard rule
 
-You may not run any command that can change state on disk or on a remote.
-The Bash allow-list is read-only.
+You are read-only. You may not run any Bash command that mutates the
+working tree, the index, or anything remote. Safe commands include `rg`,
+`find`, `ls`, `git log`, `git blame`, `git show`, `cat`. Forbidden: `git
+checkout`, `git reset`, any redirect (`>`, `>>`), any `rm`/`mv`/`cp`/`mkdir`
+that affects the repo, anything that hits the network or modifies files.
+
+If you need to mutate state, stop and tell the main agent. Do not work
+around this rule.

@@ -4,9 +4,6 @@ description: TypeScript style + correctness rules for this repo. Auto-loads when
 paths:
   - '**/*.ts'
   - '**/*.tsx'
-globs:
-  - '**/*.ts'
-  - '**/*.tsx'
 ---
 
 # TypeScript style rules

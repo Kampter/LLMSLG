@@ -42,6 +42,14 @@ if uv run mypy .; then ok "type ok"; else fail "type failed"; failed=1; fi
 step "Python: pytest"
 if uv run pytest; then ok "tests ok"; else fail "tests failed"; failed=1; fi
 
+# --- Harness self-tests --------------------------------------------------
+
+step "Harness: static lint (.claude/)"
+if bash scripts/lint-claude.sh; then ok "lint ok"; else fail "lint failed"; failed=1; fi
+
+step "Harness: hook behaviour"
+if bash scripts/test-hooks.sh; then ok "hook tests ok"; else fail "hook tests failed"; failed=1; fi
+
 # --- Result -------------------------------------------------------------
 
 echo

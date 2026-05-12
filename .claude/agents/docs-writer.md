@@ -1,7 +1,7 @@
 ---
 name: docs-writer
 description: Drafts or updates documentation files (README, ADR, architecture docs). Use when the user explicitly asks for documentation work; never invoke proactively.
-tools: Read, Edit, Write, Glob, Grep, Bash(git log:*), Bash(git diff:*)
+tools: Read, Edit, Write, Glob, Grep, Bash
 model: claude-sonnet-4-6
 ---
 

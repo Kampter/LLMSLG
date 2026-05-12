@@ -111,6 +111,12 @@ jobs:
           sudo apt-get update && sudo apt-get install -y shellcheck
           shellcheck scripts/*.sh .claude/hooks/*.sh
 
+      - name: Harness static lint
+        run: bash scripts/lint-claude.sh
+
+      - name: Harness hook behaviour tests
+        run: bash scripts/test-hooks.sh
+
       - name: gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
