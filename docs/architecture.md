@@ -93,9 +93,8 @@ this doc and the code disagree, the code wins.
 ### Testing strategy
 
 - **Unit tests:** colocated with code. Pure, fast, deterministic.
-- **Integration tests:** under `tests/integration/`. Behind
-  `pnpm test:integration`. Spin up real (in-process) services with fakes
-  for external dependencies.
+- **Integration tests:** colocated with code alongside unit tests. Spin up
+  real (in-process) services with fakes for external dependencies.
 - **No live LLM calls** in tests. Use the `FakeLLM` fixture pattern.
 
 ## Boundaries to defend

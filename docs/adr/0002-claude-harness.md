@@ -29,7 +29,7 @@ opening a session in this repo inherits.
 - `.claude/agents/*` — subagent definitions for isolated context use cases
   (review, exploration, planning, security audit).
 - `.claude/commands/*` — explicit slash commands (`/check`, `/ship`,
-  `/onboard`, `/tour`, `/clean`).
+  `/start-task`, `/open-pr`, `/onboard`, `/tour`, `/clean`).
 - `.claude/rules/*` — path-scoped style rules (Python, TS, tests, secrets,
   protocol).
 - `.claude/hooks/*` — deterministic shell hooks (auto-format, secret
