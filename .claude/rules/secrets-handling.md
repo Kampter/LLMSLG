@@ -40,3 +40,11 @@ external services.
 - Don't include real keys in error messages or stack traces.
 - Don't commit `.env.local`, `.env.production`, or any file under `secrets/`.
 - Don't shell-escape your way around the deny list.
+
+## Worktree caveat
+
+The `WorktreeCreate` hook copies `.env*` from the main checkout into
+`.claude/worktrees/<user>/<slug>/` so `pnpm dev` works there immediately.
+Both `.claude/worktrees/` and `.env*` are gitignored, so nothing reaches git.
+Do not sync `.claude/worktrees/` to external locations (cloud backup,
+syncthing, shared volumes) — those copies bypass `.gitignore`.

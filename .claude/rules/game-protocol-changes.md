@@ -4,9 +4,6 @@ description: Coordinated changes between the shared schemas. Auto-loads when tou
 paths:
   - 'python-packages/shared/**'
   - 'packages/types/**'
-globs:
-  - 'python-packages/shared/**'
-  - 'packages/types/**'
 ---
 
 # Game protocol changes

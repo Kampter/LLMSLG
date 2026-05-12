@@ -1,7 +1,7 @@
 ---
 name: explorer
 description: Read-only codebase exploration. Use when the main agent needs to answer "where is X" / "which files reference Y" / "how is Z implemented" without polluting the main context with grep output.
-tools: Read, Glob, Grep, Bash(rg:*), Bash(find:*), Bash(ls:*), Bash(git log:*), Bash(git blame:*)
+tools: Read, Glob, Grep, Bash
 model: claude-haiku-4-5-20251001
 ---
 

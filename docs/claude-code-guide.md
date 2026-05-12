@@ -45,9 +45,11 @@ That's the baseline. The rest is invocable.
 | `packages/<x>/CLAUDE.md`        | Lazy: only when Claude touches a file under that package. |
 | `python-packages/<x>/CLAUDE.md` | Lazy.                                                     |
 
-Hard rule: keep each `CLAUDE.md` short. < 200 lines for the root, < 100 for
-sub-files. If you're tempted to write more, push it into a skill, a rule, or
-a doc.
+Hard rule: keep each `CLAUDE.md` short. < 100 lines for the root, < 80 for
+sub-files (Boris Cherny's internal target is ~2.5K tokens / ~100 lines).
+HTML block comments `<!-- ... -->` are stripped from Claude's context, so
+maintainer notes go there cost-free. If you're tempted to write more, push
+it into a skill, a rule, or a doc.
 
 ### 2. Rules (`.claude/rules/*.md`)
 
@@ -65,10 +67,14 @@ paths:
 
 Notes:
 
-- We list both `paths:` (official) and `globs:` (community-reported reliable)
-  in our rules to hedge against early-2026 Claude Code bugs.
-- Path-based rules currently only fire on **read**, not on first write. For
+- The official field is `paths:` (Claude Code, v2.0.64+). Do not add a
+  `globs:` field — that is Cursor format and Claude will ignore it.
+- Path-scoped rules fire when Claude **reads** a file matching the glob.
+  They do not pre-fire on a fresh write to a not-yet-existing path; for
   rules that must apply at creation time, keep them in the root `CLAUDE.md`.
+- Rules without a `paths:` field load unconditionally (same as the root
+  `CLAUDE.md`). We use this for `secrets-handling.md` and
+  `worktree-discipline.md`.
 
 Installed rules:
 
@@ -194,8 +200,29 @@ By design, none of the following is wired up:
 - **No remote MCP servers by default.** Add them per-developer in
   `~/.claude.json` if needed; don't commit them to the shared settings.
 - **No model-graded test runners.** Tests are deterministic, not LLM-judged.
+- **No plugins / marketplaces.** Single-repo project; plugin packaging adds
+  ceremony without payoff today.
 
 If you need any of these, document the trade-off in an ADR first.
+
+## Anti-patterns we deliberately avoid
+
+These are the 2026 community-consensus mistakes the harness is built to
+sidestep. If you find yourself reaching for one, push back:
+
+- **CLAUDE.md bloat.** Long files eat the instruction budget and degrade
+  adherence. Rule of thumb: < 100 lines for root, < 80 for sub-files.
+- **Putting linter rules in CLAUDE.md.** That's what Ruff and Prettier are
+  for — deterministic tools beat prose every time.
+- **Write-time hook blocks.** They interrupt agent reasoning. Block at
+  submit time (UserPromptSubmit) or after the fact, not mid-edit.
+- **Rigid subagent gatekeeping.** Better to let the main agent spawn
+  workers dynamically than to enforce a fixed Lead/Specialist hierarchy.
+- **@-file imports of long docs into CLAUDE.md.** They embed full content
+  on every run; use `file:line` references instead.
+- **Trusting an `Agent` definition without testing it.** Frontmatter typos
+  (e.g. invalid `tools:` syntax) silently broaden permissions. Run the
+  agent once after editing.
 
 ## How to extend this harness
 

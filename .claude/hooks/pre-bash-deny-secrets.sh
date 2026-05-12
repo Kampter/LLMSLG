@@ -46,11 +46,14 @@ case "$cmd" in
     deny "git reset --hard is denied; investigate state before discarding." ;;
 esac
 
-# Heuristic: writing/reading a .env file via shell.
-case "$cmd" in
-  *">"*".env"*|*"cat .env"*|*"cat "*"/.env"*|*"less .env"*|*"more .env"*)
-    deny "Refusing to read/write .env via shell. Use a real secrets tool." ;;
-esac
+# Heuristic: writing/reading a real .env file via shell.
+# Allowlist .env.example / .env.sample / .env.template (publishable placeholders).
+if printf '%s' "$cmd" \
+  | grep -E -q '(\b(cat|less|more|head|tail|bat|xxd|od|hexdump)\b[[:space:]]+([^|;&]*[/[:space:]])?\.env\b|>[[:space:]]*([^|;&]*[/[:space:]])?\.env\b)' \
+  && ! printf '%s' "$cmd" \
+  | grep -E -q '\.env\.(example|sample|template)\b'; then
+  deny "Refusing to read/write a real .env via shell (.env.example / .env.sample / .env.template are allowed). Use a real secrets tool for live values."
+fi
 
 # Heuristic: looks like a token literal landing in a command.
 # Anthropic / OpenAI / GitHub PAT / Slack / AWS keys.

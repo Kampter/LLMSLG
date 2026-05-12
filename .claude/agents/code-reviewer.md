@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Independent code review for a diff, PR branch, or specific file change. Use when you want a second opinion that hasn't seen the conversation context. Read-only.
-tools: Read, Glob, Grep, Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(rg:*)
+tools: Read, Glob, Grep, Bash
 model: claude-sonnet-4-6
 ---
 

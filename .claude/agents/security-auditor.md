@@ -1,7 +1,7 @@
 ---
 name: security-auditor
 description: Independent security audit of a diff or feature branch. Use before merging anything that touches auth, persistence, RPC, or user input. Read-only.
-tools: Read, Glob, Grep, Bash(git diff:*), Bash(git log:*), Bash(rg:*)
+tools: Read, Glob, Grep, Bash
 model: claude-opus-4-7
 ---
 

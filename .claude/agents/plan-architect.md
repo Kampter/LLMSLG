@@ -1,7 +1,7 @@
 ---
 name: plan-architect
 description: Software architect for designing implementation plans on non-trivial changes. Use when the main agent needs a step-by-step plan, identification of critical files, and architectural trade-offs.
-tools: Read, Glob, Grep, Bash(git log:*), Bash(rg:*)
+tools: Read, Glob, Grep, Bash
 model: claude-opus-4-7
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: test-runner
 description: Run a test suite (Python or TS) in its own context, parse output, and report a concise pass/fail summary. Use when running a long suite that would clutter the main conversation.
-tools: Read, Glob, Bash(uv:*), Bash(pnpm:*), Bash(pytest:*), Bash(vitest:*), Bash(turbo:*), Bash(rg:*)
+tools: Read, Glob, Bash
 model: claude-haiku-4-5-20251001
 ---
 

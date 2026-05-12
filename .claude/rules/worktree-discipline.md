@@ -1,10 +1,6 @@
 ---
 name: worktree-discipline
 description: Code changes happen in git worktrees, not on main. Maintain .claude/TASK.md throughout each task.
-paths:
-  - '**/*'
-globs:
-  - '**/*'
 ---
 
 # Worktree discipline

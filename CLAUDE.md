@@ -1,107 +1,95 @@
 # LLMSLG — Claude Code Repo Constitution
 
-This file is the source of truth for how Claude should operate in this repo.
-Keep it short. If you find yourself adding more than a sentence, push details
-into `.claude/rules/`, `.claude/skills/`, or a subpackage `CLAUDE.md`.
+<!--
+Maintainer notes (stripped from Claude's context — block-level HTML comments
+do not enter the model's window):
 
----
+  - Keep this file < 100 lines. Boris (Head of Claude Code) targets ~2.5K
+    tokens. We target the same. If a section is growing, push detail into
+    `.claude/rules/`, a sub-CLAUDE.md, or a doc.
+  - Style rules go in `.claude/rules/`, not here — they auto-load only when
+    relevant, keeping context lean.
+  - Always-on rules (secrets, worktree discipline) live in `.claude/rules/`
+    without a `paths:` field. Do not duplicate them here.
+  - When you find Claude doing something wrong twice, prefer adding to the
+    relevant rule/skill over bloating this file (Compounding Engineering).
+-->
 
-## What this repo is
+## What this repo is (WHAT)
 
-LLMSLG is a single monorepo with three runtimes:
+Monorepo with three runtimes that talk over a versioned wire protocol:
 
-- **`apps/llmagent`** — Python 3.12 + `uv`. Client-side LLM agent that drives game decisions.
-- **`apps/server`** — Python 3.12 + `uv`. Authoritative game server (state, validation, persistence).
-- **`apps/landing`** — TypeScript + `pnpm` + Next.js. Public landing page.
+- **`apps/llmagent`** — Python 3.12 / `uv`. Client-side LLM agent.
+- **`apps/server`** — Python 3.12 / `uv`. Authoritative game server.
+- **`apps/landing`** — TypeScript / `pnpm` / Next.js. Public marketing site.
 
-Shared code: `packages/*` (TypeScript) and `python-packages/*` (Python). Internal
-deps are wired by workspace protocol — never by published versions.
+Shared contracts: `python-packages/shared` (Pydantic, source of truth) and
+`packages/types` (TS mirror). Internal deps wired by workspace protocol only.
 
-## Commands you can rely on
+Detailed component map: `docs/architecture.md`. Subpackage `CLAUDE.md` files
+load lazily when you touch their directory.
+
+## Commands you can rely on (HOW)
 
 ```bash
-pnpm bootstrap                # full install (Node + Python + hooks). Run once after clone.
-pnpm check                    # lint + typecheck + test, every language, gated by Turbo.
-pnpm test                     # all tests (TS via Vitest, Python via pytest).
-pnpm dev                      # all apps in dev mode, parallel.
+pnpm bootstrap                # full install (Node + Python + git hooks). One-time post-clone.
+pnpm check                    # lint + typecheck + test, every language. The quality gate.
+pnpm test                     # all tests (Vitest + pytest) via Turbo.
+pnpm dev                      # all apps in parallel.
 pnpm format                   # Prettier + Ruff format.
-uv run pytest apps/llmagent   # focused Python tests (one workspace member).
-pnpm --filter @llmslg/<name>  # focused TS tasks (one workspace package).
+uv run pytest apps/llmagent   # focused Python tests in one workspace member.
+pnpm --filter @llmslg/<name>  # focused TS tasks in one workspace package.
 ```
 
-If a command above does not work on a clean clone, the harness is broken — fix
-that before doing anything else.
+**Verification feedback loop.** Before reporting any code task as done, run
+`pnpm check` (or `bash scripts/check.sh`) and confirm it is green. If you
+cannot verify a change end-to-end (e.g. UI-only behaviour), say so plainly
+rather than claim success.
+
+If a command above fails on a clean clone, the harness is broken — fix that
+before anything else.
 
 ## Tooling pins (do not silently change)
 
-- Python: 3.12 (`.python-version`). Manager: `uv` only — never `pip`, `poetry`, `pipenv`.
-- Node: 20.18+ (`.nvmrc`). Manager: `pnpm` 9.12+ only — never `npm` or `yarn`.
-- Orchestrator: Turborepo. Task graphs in `turbo.json`. Don't add `npx turbo` calls inside packages.
-- Lockfiles `pnpm-lock.yaml` and `uv.lock` are committed. Regenerate them by changing manifests, not by editing the lockfile.
+- Python: 3.12 (`.python-version`). Manager: `uv` only.
+- Node: 20.18+ (`.nvmrc`). Manager: `pnpm` 9.12+ only.
+- Orchestrator: Turborepo (`turbo.json`). No `npx turbo` inside packages.
+- Lockfiles `pnpm-lock.yaml` and `uv.lock` are committed. Regenerate by
+  changing manifests, not by editing the lockfile.
 
 ## Repo-wide conventions
 
 1. **Trust the workspace.** Internal imports go through workspace deps
-   (`workspace:*` for TS, `{ workspace = true }` for Python). Never reach across
-   packages with relative paths like `../../other-app`.
-2. **Tests live next to code.** TS: `*.test.ts` adjacent to the unit. Python:
-   `tests/` directory inside each package.
-3. **No new top-level dirs without an ADR.** Add it under `docs/adr/` first.
-4. **Don't introduce a second tool that does the same job.** Want a different
+   (`workspace:*` for TS, `{ workspace = true }` for Python). No
+   `../../other-app` relative paths.
+2. **Tests live next to code.** TS: `*.test.ts` adjacent. Python: `tests/`
+   inside each package.
+3. **No new top-level dirs without an ADR** under `docs/adr/`.
+4. **Don't introduce a second tool that does the same job.** Different
    bundler / linter / state lib? Open an ADR.
-5. **Secrets never enter the repo.** `.env*` files are gitignored. Use
-   `.env.example` for the schema. The `deny-secrets` hook will block obvious leaks.
 
-## Where to look next (lazy-loaded)
+## Where to look next
 
-Sub-CLAUDE.md files are loaded automatically when Claude touches their package:
-
-- `apps/llmagent/CLAUDE.md` — agent loop, prompt assembly, LLM provider abstraction.
-- `apps/server/CLAUDE.md` — game state model, RPC layer, persistence rules.
-- `apps/landing/CLAUDE.md` — Next.js App Router conventions, SEO, marketing copy.
-- `packages/types/CLAUDE.md` — shared TS types contract (versioning rules).
-- `python-packages/shared/CLAUDE.md` — shared Python models (Pydantic + protocol).
-
-Reference docs (read on demand, don't preload):
-
-- `docs/architecture.md` — system diagram and component contracts.
-- `docs/claude-code-guide.md` — full tour of this harness.
-- `docs/adr/` — architectural decision records.
-
-## Skills, agents, hooks (lazy-loaded)
-
-The `.claude/` directory is fully wired. Glance at it before asking the user
-for something already automated:
-
-- `.claude/skills/*/SKILL.md` — invocable procedures (run tests, audit a PR, …).
-- `.claude/agents/*.md` — subagents for isolated/parallel work.
-- `.claude/commands/*.md` — explicit slash commands (e.g. `/check`, `/ship`).
-- `.claude/rules/*.md` — path-scoped style rules (auto-injected by glob).
-- `.claude/hooks/*` — deterministic shell hooks wired through `settings.json`.
+- Subpackage notes (load lazily): `apps/{llmagent,server,landing}/CLAUDE.md`,
+  `packages/types/CLAUDE.md`, `python-packages/shared/CLAUDE.md`.
+- Always-on rules: `.claude/rules/secrets-handling.md`,
+  `.claude/rules/worktree-discipline.md`.
+- Path-scoped rules (auto-load when matching files are read):
+  `.claude/rules/{python-style,ts-style,tests-discipline,game-protocol-changes}.md`.
+- Harness map: `.claude/README.md` (skills vs agents vs commands vs hooks).
+- Architecture: `docs/architecture.md`. Decisions: `docs/adr/`. Onboarding:
+  `docs/onboarding.md`. Full harness tour: `docs/claude-code-guide.md`.
 
 ## Default to small, reversible steps
 
-- Bug fixes touch only the buggy code path — no opportunistic refactors.
-- Refactors come with passing tests _before_ the refactor and identical tests after.
-- Plan mode is on by default for tasks above a few files; let it propose, then
-  ask the user before executing.
-- **All code changes happen in worktrees, not on `main`.** No exceptions —
-  including typos, dependabot reviews, and one-line fixes. The
-  `UserPromptSubmit` hook blocks dev-style prompts on `main`; users must run
-  `/start-task <slug>` first. Read-only sessions on `main` remain fine. See
-  `.claude/rules/worktree-discipline.md`.
-- **Maintain `.claude/TASK.md` inside each worktree.** Append a decision line
-  when you choose between approaches, accept a trade-off, receive new user
-  constraints, or finish a milestone. `/open-pr` reads it to populate the PR
-  description and refuses to push without Goal + Key decisions filled in.
+Bug fixes touch only the buggy code path — no opportunistic refactors.
+Refactors come with passing tests before and after. For tasks above a few
+files, use plan mode; propose, then ask before executing. Code edits happen
+in a worktree (see `.claude/rules/worktree-discipline.md`), never on `main`.
 
-## Things this repo has learned the hard way
+## Compounding Engineering
 
-- **Do not commit generated lockfile diffs without rerunning the install.** A
-  stale lockfile breaks CI on every machine but the author's.
-- **`uv sync --all-packages` after pulling.** Otherwise new workspace members
-  won't be installed and imports will mysteriously fail.
-- **Game-server changes touch protocol → also update `python-packages/shared`
-  and `packages/types`.** Otherwise the landing page and the agent diverge.
-
-If something here looks wrong or stale, fix it. This file is code.
+If Claude makes the same mistake twice, or a reviewer flags something that
+should have been obvious, add a line to the matching `.claude/rules/*.md`
+file. This is how the harness improves. Treat this file and its sibling
+rules as code that gets PRs, reviews, and amendments.
