@@ -105,6 +105,67 @@ for f in .claude/agents/*.md; do
       err "$f: model '$model' is not a recognised alias or canonical ID (claude-{opus,sonnet,haiku}-X-Y[-YYYYMMDD])"
     fi
   fi
+
+  # permissionMode: one of the 6 documented enum values. A typo here
+  # silently widens permissions because the loader falls back to default.
+  perm_mode=$(fm_value "$yaml" permissionMode)
+  if [ -n "$perm_mode" ]; then
+    case "$perm_mode" in
+      default|acceptEdits|auto|dontAsk|bypassPermissions|plan) ;;
+      *)
+        err "$f: permissionMode '$perm_mode' is invalid (allowed: default, acceptEdits, auto, dontAsk, bypassPermissions, plan)"
+        ;;
+    esac
+  fi
+
+  # skills: every preloaded skill name must resolve to .claude/skills/<name>/
+  # or .claude/commands/<name>.md. A typo silently drops the preload at
+  # runtime (only a debug-log warning).
+  if fm_has_key "$yaml" skills; then
+    # Frontmatter list form: either inline `skills: [a, b]` or YAML list
+    # (lines starting with `  - `). fm_value returns the inline value; for
+    # multiline lists we scan dash-prefixed lines.
+    skill_inline=$(fm_value "$yaml" skills)
+    skill_names=""
+    if [ -n "$skill_inline" ]; then
+      # Strip [ ] then split on commas.
+      skill_names=$(printf '%s' "$skill_inline" | tr -d '[]' | tr ',' '\n')
+    fi
+    # Append YAML list items: lines under `skills:` that look like `  - foo`.
+    skill_names="$skill_names
+$(printf '%s\n' "$yaml" | awk '
+      /^skills:[[:space:]]*$/ {in_list=1; next}
+      /^[A-Za-z]/ {in_list=0}
+      in_list && /^[[:space:]]+-/ {sub(/^[[:space:]]+-[[:space:]]*/, ""); print}
+    ')"
+    while IFS= read -r s; do
+      s=$(printf '%s' "$s" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -d '"'"'")
+      [ -z "$s" ] && continue
+      if [ ! -f ".claude/skills/$s/SKILL.md" ] && [ ! -f ".claude/commands/$s.md" ]; then
+        err "$f: skills preload references '$s' but neither .claude/skills/$s/SKILL.md nor .claude/commands/$s.md exists"
+      fi
+    done <<<"$skill_names"
+  fi
+
+  # Body ↔ tools consistency: if the body claims read-only ("read-only",
+  # "you are read-only", "do not edit", "you cannot edit", "did not write
+  # this code"), the tools list must not grant Edit/Write/MultiEdit (or
+  # those tools must be in disallowedTools).
+  body_lower=$(awk 'BEGIN{passed=0; fences=0}
+       /^---[[:space:]]*$/ {fences++; if (fences==2) passed=1; next}
+       passed' "$f" | tr '[:upper:]' '[:lower:]')
+  if printf '%s' "$body_lower" | grep -E -q \
+      'read-only|do not edit|cannot edit|did not write this|you are read|do not modify|never modify any files'; then
+    disallowed=$(fm_value "$yaml" disallowedTools)
+    has_write=0
+    if printf '%s' "$tools" | grep -E -q '(^|[[:space:],])(Edit|Write|MultiEdit|NotebookEdit)([[:space:],]|$)'; then
+      has_write=1
+    fi
+    if [ "$has_write" -eq 1 ] \
+      && ! printf '%s' "$disallowed" | grep -E -q '(Edit|Write|MultiEdit|NotebookEdit)'; then
+      err "$f: body claims read-only but tools include Edit/Write/MultiEdit/NotebookEdit. Either remove them from 'tools:' or list them in 'disallowedTools:'."
+    fi
+  fi
 done
 ok "agents scanned"
 
@@ -223,13 +284,15 @@ else
     fi
   done
 
-  # Detect hooks on disk that are not wired anywhere.
+  # Detect hooks on disk that are not wired anywhere. Helpers under
+  # `.claude/hooks/lib/` are intentionally not wired; they're sourced by
+  # other hooks via `bash <path>`.
   while IFS= read -r -d '' on_disk; do
     rel="${on_disk#./}"
     if ! printf '%s\n' "$configured" | grep -qF "$rel"; then
       wrn "$rel exists on disk but is not wired in settings.json (orphan hook?)"
     fi
-  done < <(find ./.claude/hooks -type f -name '*.sh' -print0)
+  done < <(find ./.claude/hooks -maxdepth 1 -type f -name '*.sh' -print0)
 fi
 ok "settings ↔ disk scanned"
 
@@ -305,6 +368,36 @@ for f in .claude/commands/*.md; do
   done
 done
 ok "command references scanned"
+
+# ---------------------------------------------------------------------------
+# 9. settings.json JSON-schema validation
+#
+# The schema is vendored in scripts/schemas/ so lint works offline.
+# Refresh instructions live in scripts/schemas/README.md.
+# Requires `check-jsonschema` from the `dev` dependency group (installed
+# by `pnpm bootstrap` or `uv sync --all-groups`). Missing-binary degrades
+# to a warning so a stripped-down env doesn't trip lint.
+# ---------------------------------------------------------------------------
+step "settings.json ↔ vendored schema"
+
+schema=scripts/schemas/claude-code-settings.schema.json
+target=.claude/settings.json
+
+if [ ! -f "$schema" ]; then
+  wrn "$schema missing; skipping JSON-schema validation"
+elif [ ! -f "$target" ]; then
+  err "$target missing"
+elif ! command -v uv >/dev/null 2>&1; then
+  wrn "uv not installed; skipping JSON-schema validation"
+elif ! uv run --no-sync check-jsonschema --version >/dev/null 2>&1; then
+  wrn "check-jsonschema missing from .venv; run 'uv sync --all-groups' to enable schema validation"
+elif uv run --no-sync check-jsonschema --schemafile "$schema" "$target" >/dev/null 2>&1; then
+  ok "settings.json conforms to claude-code schema"
+else
+  err "settings.json fails JSON-schema validation:"
+  uv run --no-sync check-jsonschema --schemafile "$schema" "$target" 2>&1 \
+    | sed 's/^/    /' >&2 || true
+fi
 
 # ---------------------------------------------------------------------------
 # Done.

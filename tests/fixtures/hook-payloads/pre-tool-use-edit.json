@@ -1,0 +1,14 @@
+{
+  "session_id": "sess-fixture-001",
+  "transcript_path": "/Users/dev/.claude/projects/llmslg/sess-fixture-001/transcript.jsonl",
+  "cwd": "/Users/dev/proj/llmslg",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "FIXTURE_FILE_PLACEHOLDER",
+    "old_string": "old",
+    "new_string": "new"
+  },
+  "tool_use_id": "toolu_03GHI"
+}

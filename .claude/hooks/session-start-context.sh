@@ -10,6 +10,30 @@ set -uo pipefail
 project_dir="${CLAUDE_PROJECT_DIR:-$PWD}"
 cd "$project_dir" 2>/dev/null || exit 0
 
+# Audit-log retention: prune daily files older than 30 days. Cheap to run
+# on every session start, idempotent, never blocks. Done before anything
+# else so a corrupted log dir can't take down the banner. `-mtime +30` is
+# "30 days since last write"; for our append-only daily files (each only
+# touched on its own UTC date) that's effectively "30 days since creation".
+find "$project_dir/.claude/.tmp/hooks" -name '*.jsonl' -type f -mtime +30 -delete 2>/dev/null || true
+
+# SessionStart payload (consumed both for audit logging and field extraction).
+payload="$(cat || true)"
+
+# Audit-log the session-start event itself.
+log_event="$project_dir/.claude/hooks/lib/log-event.sh"
+if [ -f "$log_event" ]; then
+  extra='{"hook_event_name":"SessionStart"}'
+  if command -v jq >/dev/null 2>&1 && [ -n "$payload" ]; then
+    built="$(printf '%s' "$payload" | jq -c '{
+      hook_event_name: "SessionStart",
+      source: (.source // "unknown")
+    }' 2>/dev/null)"
+    [ -n "$built" ] && extra="$built"
+  fi
+  printf '%s' "$payload" | bash "$log_event" "$extra" || true
+fi
+
 branch="$(git -C "$project_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'no-git')"
 ahead_behind=""
 if [ "$branch" != "no-git" ] && git -C "$project_dir" rev-parse --verify origin/main >/dev/null 2>&1; then

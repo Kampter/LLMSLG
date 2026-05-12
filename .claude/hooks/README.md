@@ -13,28 +13,67 @@ Shell hooks wired to Claude Code lifecycle events. All hooks must be:
 Source of truth for the wiring is `.claude/settings.json` (hooks key). Keep
 this table in sync when you add or remove a hook.
 
-| File                        | Event                 | Matcher                | Purpose                                                       |
-| --------------------------- | --------------------- | ---------------------- | ------------------------------------------------------------- |
-| `post-edit-format.sh`       | `PostToolUse`         | Edit\|Write\|MultiEdit | Auto-format the file Claude just edited.                      |
-| `pre-bash-deny-secrets.sh`  | `PreToolUse`          | Bash                   | Block secret-leaking or destructive shell commands.           |
-| `session-start-context.sh`  | `SessionStart`        | -                      | Inject the session banner (branch, dirty state, TODO count).  |
-| `stop-summary.sh`           | `Stop`                | -                      | Append a one-line event to a local hooks log.                 |
-| `user-prompt-router.sh`     | `UserPromptExpansion` | ship\|release\|deploy  | Inject ship/release/deploy reminders into expanded prompts.   |
-| `user-prompt-detect-dev.sh` | `UserPromptSubmit`    | -                      | Block dev-style prompts on `main`; read-only intents allowed. |
-| `worktree-create.sh`        | `WorktreeCreate`      | -                      | Custom worktree creation: branch + `.env*` copy + ready msg.  |
+| File                        | Event                 | Matcher                | Purpose                                                                |
+| --------------------------- | --------------------- | ---------------------- | ---------------------------------------------------------------------- |
+| `post-edit-format.sh`       | `PostToolUse`         | Edit\|Write\|MultiEdit | Auto-format the file Claude just edited.                               |
+| `pre-bash-deny-secrets.sh`  | `PreToolUse`          | Bash                   | Block secret-leaking or destructive shell commands; audits each block. |
+| `session-start-context.sh`  | `SessionStart`        | -                      | Inject the session banner; prune audit logs older than 30 days.        |
+| `stop-summary.sh`           | `Stop`                | -                      | Append a per-turn audit line.                                          |
+| `subagent-stop-log.sh`      | `SubagentStop`        | -                      | Audit-log subagent finish (agent_id, agent_type).                      |
+| `session-end-log.sh`        | `SessionEnd`          | -                      | Audit-log session terminator (reason).                                 |
+| `user-prompt-router.sh`     | `UserPromptExpansion` | ship\|release\|deploy  | Gate /release & /deploy; audit-log every matched expansion.            |
+| `user-prompt-detect-dev.sh` | `UserPromptSubmit`    | -                      | Block dev-style prompts on `main`; read-only intents allowed.          |
+| `worktree-create.sh`        | `WorktreeCreate`      | -                      | Custom worktree creation: branch + `.env*` copy + ready msg.           |
 
-## Environment available
+## Helpers (not wired directly)
 
-Every hook receives:
+| File               | Purpose                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| `lib/log-event.sh` | Append a JSONL line to `.claude/.tmp/hooks/YYYY-MM-DD.jsonl`. Shared by every audit-aware hook. |
 
-- `CLAUDE_PROJECT_DIR` — repo root.
-- `CLAUDE_SESSION_ID` — session UUID.
-- `CLAUDE_TOOL_NAME` — name of the triggering tool.
-- `CLAUDE_TOOL_INPUT` — JSON-encoded tool input (also available on stdin).
-- `CLAUDE_FILE_PATH` — convenience for Edit/Write events.
+## Audit log
 
-Hooks read the full payload from **stdin** as JSON. Prefer that over the env
-vars; the JSON shape is more stable.
+Every hook routes through `lib/log-event.sh`. The log lives at
+`.claude/.tmp/hooks/YYYY-MM-DD.jsonl` (UTC date, gitignored). One JSONL
+record per event with this shape:
+
+```jsonc
+{
+  "v": 1, // schema version
+  "ts": "2026-05-12T08:00:00Z", // UTC, second resolution
+  "session_id": "sess-…", // from stdin JSON, NOT env
+  "transcript_path": "/.../transcript.jsonl",
+  "hook_event_name": "Stop",
+  "cwd": "/...",
+  "permission_mode": "default", // when present in the payload
+  // event-specific extras: decision, reason_tag, tool_name, agent_id, ...
+}
+```
+
+Retention: files older than 30 days are pruned at the start of each
+session (`session-start-context.sh`). No log rotation otherwise — one
+file per UTC day is enough.
+
+Inspect interactively:
+
+```bash
+tail -f .claude/.tmp/hooks/$(date -u +%F).jsonl | jq .
+```
+
+## Input fields
+
+Every hook reads its payload from **stdin as JSON**. The 2026 hook spec
+puts the common fields at the top level:
+
+- `session_id`, `transcript_path`, `cwd`, `hook_event_name`,
+  `permission_mode` (and `effort` on tool-use events).
+
+The legacy `CLAUDE_*` env vars (`CLAUDE_SESSION_ID`,
+`CLAUDE_TOOL_INPUT`, `CLAUDE_FILE_PATH`) are still set on most events
+but are no longer the source of truth — prefer the stdin JSON.
+`CLAUDE_PROJECT_DIR` remains the canonical way to get the repo root.
+
+Captured payload fixtures live at `tests/fixtures/hook-payloads/`.
 
 ## How to add a new hook
 
@@ -42,7 +81,9 @@ vars; the JSON shape is more stable.
 2. `chmod +x` it.
 3. Wire it in `.claude/settings.json` under the right event and matcher.
 4. Add a row to the table above.
-5. Test locally by triggering the event manually.
+5. Add a black-box test in `scripts/test-hooks.sh`.
+6. (If observational) write to `lib/log-event.sh` so the event is
+   auditable.
 
 ## Blocking vs observing
 

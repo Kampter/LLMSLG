@@ -1,31 +1,29 @@
 #!/usr/bin/env bash
 #
-# Stop hook: small end-of-turn summary written to the local hooks log.
+# Stop hook: append a per-turn audit line via the shared log-event helper.
 #
-# This is purely observational. It does NOT post to chat, does NOT call any
-# external API, and does NOT touch user-visible output. Its only side effect
-# is appending one JSON line to .claude/.tmp/hooks.log (gitignored).
+# Output: one JSONL record under .claude/.tmp/hooks/YYYY-MM-DD.jsonl
+# (gitignored). Never posts to chat, never calls an external API.
+#
+# session_id comes from the stdin JSON, not from an env var. The
+# CLAUDE_SESSION_ID env fallback that previous builds used has been
+# dropped in the 2026 hook spec; see code.claude.com/docs/en/hooks.
 set -uo pipefail
 
 project_dir="${CLAUDE_PROJECT_DIR:-$PWD}"
-log_dir="$project_dir/.claude/.tmp"
-mkdir -p "$log_dir" 2>/dev/null || exit 0
-
 payload="$(cat || true)"
-ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-session_id="${CLAUDE_SESSION_ID:-unknown}"
 
+extra='{"hook_event_name":"Stop"}'
 if command -v jq >/dev/null 2>&1 && [ -n "$payload" ]; then
-  printf '%s' "$payload" | jq -c --arg ts "$ts" --arg sid "$session_id" '{
-    ts: $ts,
-    session: $sid,
-    event: "Stop",
-    cwd: (.cwd // env.PWD // "."),
+  built="$(printf '%s' "$payload" | jq -c '{
+    hook_event_name: "Stop",
     stop_hook_active: (.stop_hook_active // false)
-  }' >> "$log_dir/hooks.log" 2>/dev/null || true
-else
-  printf '{"ts":"%s","session":"%s","event":"Stop"}\n' "$ts" "$session_id" \
-    >> "$log_dir/hooks.log" 2>/dev/null || true
+  }' 2>/dev/null)"
+  [ -n "$built" ] && extra="$built"
 fi
+
+printf '%s' "$payload" \
+  | bash "$project_dir/.claude/hooks/lib/log-event.sh" "$extra" \
+  || true
 
 exit 0

@@ -59,6 +59,17 @@ reason="代码改动必须在 worktree 里做，main 上禁止编辑（即便是
 然后在 worktree 里重新发送你的请求。
 如果是只读探索（解释、审计、阅读），rephrase 成 read-only 措辞即可（如 'explain X' 而不是 'fix X'）。"
 
+# Audit: log the block (no prompt content — that's in transcript).
+log_event="$project_dir/.claude/hooks/lib/log-event.sh"
+if [ -f "$log_event" ]; then
+  extra="$(jq -nc '{
+      hook_event_name: "UserPromptSubmit",
+      decision: "block",
+      reason_tag: "main-dev-keyword"
+    }' 2>/dev/null || printf '{"hook_event_name":"UserPromptSubmit","decision":"block"}')"
+  printf '%s' "$payload" | bash "$log_event" "$extra" || true
+fi
+
 if command -v jq >/dev/null 2>&1; then
   printf '%s' "$reason" | jq -Rs '{decision: "block", reason: .}'
 else

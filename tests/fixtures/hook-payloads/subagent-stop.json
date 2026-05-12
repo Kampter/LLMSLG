@@ -1,0 +1,8 @@
+{
+  "session_id": "sess-fixture-001",
+  "transcript_path": "/Users/dev/.claude/projects/llmslg/sess-fixture-001/transcript.jsonl",
+  "cwd": "/Users/dev/proj/llmslg",
+  "hook_event_name": "SubagentStop",
+  "agent_id": "agent-explorer-7f3a",
+  "agent_type": "Explore"
+}

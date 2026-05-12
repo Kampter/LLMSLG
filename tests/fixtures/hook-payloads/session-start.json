@@ -1,0 +1,8 @@
+{
+  "session_id": "sess-fixture-001",
+  "transcript_path": "/Users/dev/.claude/projects/llmslg/sess-fixture-001/transcript.jsonl",
+  "cwd": "/Users/dev/proj/llmslg",
+  "hook_event_name": "SessionStart",
+  "source": "startup",
+  "model": "claude-opus-4-7"
+}
