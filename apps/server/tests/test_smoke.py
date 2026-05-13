@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 import pytest
 from httpx import AsyncClient
@@ -121,6 +122,45 @@ async def test_consume_insufficient_resources(client: AsyncClient) -> None:
     assert "energy" in response.json()["detail"].lower()
 
 
+@pytest.mark.anyio
+async def test_consume_conflict_returns_409(client: AsyncClient) -> None:
+    """Verify HTTP 409 when a concurrent modification is detected.
+
+    Race simulation: We mock consume_resources to raise
+    ConcurrentModificationError. This deterministically tests the HTTP
+    error path without relying on real DB-level concurrency, which is
+    impossible to reproduce naturally in a single async event loop with
+    aiosqlite (single writer). The actual optimistic-lock SQL behavior is
+    covered by test_service_optimistic_lock_conflict.
+    """
+    from unittest.mock import patch
+
+    from server.state.service import ConcurrentModificationError
+
+    # Create player
+    await client.post(
+        "/api/v1/player/create",
+        json={"user_id": "conflict", "starting_energy": 100, "starting_mineral": 50},
+    )
+
+    # First consume succeeds
+    r1 = await client.post(
+        "/api/v1/player/conflict/consume",
+        json={"energy_cost": 10, "mineral_cost": 0},
+    )
+    assert r1.status_code == 200
+
+    # Second consume -> 409 (mocked conflict)
+    with patch("server.rpc.resources.consume_resources", side_effect=ConcurrentModificationError()):
+        r2 = await client.post(
+            "/api/v1/player/conflict/consume",
+            json={"energy_cost": 10, "mineral_cost": 0},
+        )
+    assert r2.status_code == 409
+    assert "modified" in r2.json()["detail"].lower()
+    assert "retry" in r2.json()["detail"].lower()
+
+
 # ---------------------------------------------------------------------------
 # Business-logic layer tests (no HTTP)
 # ---------------------------------------------------------------------------
@@ -186,6 +226,49 @@ async def test_service_version_bumped_on_consume(db_session: AsyncSession) -> No
 
     state2 = await consume_resources(db_session, "versioned", energy_cost=10)
     assert state2.version == 2
+
+
+@pytest.mark.anyio
+async def test_service_optimistic_lock_conflict(test_db: dict[str, Any]) -> None:
+    """Two sessions read the same row; the second commit fails with StaleDataError.
+
+    Race simulation:
+    1. Session A and B both read player at version=0 (cached in identity map).
+    2. Session A commits successfully (version -> 1).
+    3. Session B's UPDATE WHERE version=0 fails because row is now version=1,
+       triggering StaleDataError -> ConcurrentModificationError.
+    """
+    from server.persistence.crud import get_player, update_player
+    from server.state.service import ConcurrentModificationError
+
+    session_maker = test_db["session_maker"]
+
+    # Create player
+    async with session_maker() as setup:
+        from server.state.service import create_new_player
+
+        await create_new_player(setup, "race", starting_energy=100)
+        await setup.commit()
+
+    # Two sessions read the same row (both see version=0)
+    async with session_maker() as sa, session_maker() as sb:
+        state_a = await get_player(sa, "race")
+        state_b = await get_player(sb, "race")
+        assert state_a is not None
+        assert state_b is not None
+        assert state_a.version == 0
+        assert state_b.version == 0
+
+        # Session A commits first -> success, row now version=1
+        state_a.energy -= 10
+        state_a.version += 1
+        await update_player(sa, state_a)
+
+        # Session B's commit should fail because the row was modified
+        state_b.energy -= 10
+        state_b.version += 1
+        with pytest.raises(ConcurrentModificationError):
+            await update_player(sb, state_b)
 
 
 @pytest.mark.anyio
