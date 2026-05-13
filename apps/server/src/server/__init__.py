@@ -1,15 +1,17 @@
 """Authoritative game server.
 
-Layout (planned):
-    app.py            - process entrypoint, wires uvicorn
-    rpc/              - HTTP/WS handlers, thin adapters around `state.apply_*`
-    state/            - canonical game state, pure transitions
-    rules/            - rule evaluation
-    persistence/      - storage adapters
-    telemetry/        - structured logs and metrics
+Public surface area:
+    create_app()      - FastAPI application factory (entry point)
+    __version__       - current package version
 
-Keep this __init__.py minimal: marker + re-exports of the public app factory.
+Layer boundaries (enforced by imports, not runtime checks):
+    rpc/          ->  HTTP/WebSocket handlers  ->  import from state/
+    state/        ->  business logic           ->  import from persistence/
+    persistence/  ->  storage adapters         ->  never imported by rpc/ directly
 """
 
 __version__ = "0.0.1"
-__all__: list[str] = []
+
+from server.app import create_app
+
+__all__ = ["create_app"]

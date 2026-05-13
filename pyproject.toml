@@ -100,13 +100,6 @@ exclude = [
     "\\.venv/",
 ]
 
-[[tool.mypy.overrides]]
-# Tests already include explicit `-> None` annotations, so we don't need
-# to relax disallow_untyped_defs. Add overrides here only when you have
-# an actual library that ships without type stubs.
-module = ["pytest", "pytest.*"]
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = [
