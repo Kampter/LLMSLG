@@ -16,8 +16,8 @@ Marketing + landing page. Next.js (App Router), TypeScript, no game logic.
 landing/
 ├── app/                  # App Router routes (RSC by default)
 │   ├── layout.tsx
-│   └── page.tsx
-├── components/           # presentational components
+│   ├── page.tsx
+│   └── components/       # client components (ChatPanel, ResourceDisplay)
 ├── content/              # MDX/JSON marketing copy
 ├── public/               # static assets
 └── styles/               # Tailwind / global CSS
@@ -25,8 +25,10 @@ landing/
 
 ## What to keep in mind
 
-- **This app is presentation-only.** No game state, no auth, no RPC to the
-  server. If you find yourself importing from `apps/server`, stop.
+- **Client components communicate with the game server via fetch API.**
+  `ChatPanel.tsx` and `ResourceDisplay.tsx` make `fetch()` calls to the
+  game server (`/api/v1/player/create`, `/api/v1/player/{uid}/resources`,
+  `/api/v1/player/{uid}/consume`). No auth yet — the API is open.
 - **Marketing copy lives in `content/`, not in JSX.** Easier to translate,
   easier for non-engineers to edit.
 - **Images go through `next/image`.** Raw `<img>` is allowed only for

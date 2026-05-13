@@ -16,9 +16,9 @@ every client action, and persists state.
 server/
 ├── src/server/
 │   ├── app.py            # server entrypoint
+│   ├── cli.py            # CLI entrypoint
 │   ├── rpc/              # wire protocol handlers
-│   ├── state/            # canonical game state + transitions
-│   ├── rules/            # game rules + validation
+│   ├── state/            # canonical game state + transitions + validation
 │   ├── persistence/      # storage adapters (start with SQLite)
 │   └── telemetry/        # metrics + structured logs
 └── tests/
@@ -34,8 +34,8 @@ That is a hard rule — every transition must be unit-testable without a network
 - **Protocol changes are breaking.** Any change to `python-packages/shared`
   schemas requires a version bump and a corresponding change in
   `apps/llmagent` and `packages/types`.
-- **No business logic in RPC handlers.** Handlers parse, delegate to
-  `state/` and `rules/`, then serialize.
+- **Business logic validation is co-located with state transitions in `state/`.**
+  RPC handlers parse input, delegate to `state/`, then serialize responses.
 - **Persistence is pluggable.** Treat the storage adapter as an injected
   dependency, not a global singleton.
 

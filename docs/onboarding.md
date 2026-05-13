@@ -82,4 +82,5 @@ Pick something tiny:
 
 - Architecture questions: ADRs first, then a maintainer.
 - Tooling questions: `docs/claude-code-guide.md` first, then DevX team.
+- Contributing guidelines: [`docs/contributing.md`](./contributing.md).
 - Anything else: open an issue.

@@ -17,25 +17,24 @@ talks to `apps/server` over the wire protocol defined in
 ```
 llmagent/
 ├── src/llmagent/
-│   ├── agent.py          # main control loop
-│   ├── perception/       # observation parsers
-│   ├── decision/         # planner + policy
-│   ├── action/           # action emitter (talks to server)
+│   ├── cli.py            # CLI entrypoint
+│   ├── config.py         # configuration
+│   ├── game/             # game client (talks to server)
 │   ├── llm/              # provider abstraction (OpenAI / Anthropic / local)
-│   └── memory/           # episodic + working memory
+│   ├── perception.py     # observation parsers (planned)
+│   ├── decision.py       # planner + policy (planned)
+│   └── memory.py         # episodic + working memory (planned)
 └── tests/
 ```
 
-The control loop is intentionally synchronous-looking but async under the
-hood. Keep `agent.tick()` pure-ish: observation in, action out, no side
-effects beyond emitting an action.
+> **Note:** The full perceive-decide-act loop with dedicated `perception/`,
+> `decision/`, `action/`, `memory/`, and `prompts/` modules is planned but
+> not yet implemented. The current structure is a minimal foundation.
 
 ## What to keep in mind
 
 - **LLM calls are slow and cost money.** Cache aggressively, batch where
   possible, and treat `LLMClient` as the only place that talks to providers.
-- **Never hardcode prompts in agent logic.** Prompts live under
-  `src/llmagent/prompts/` and are versioned by filename suffix.
 - **Game-protocol types come from `python-packages/shared`.** Don't redeclare
   them locally — extend the shared model instead.
 - **Determinism for tests.** `FakeLLM` is currently inlined in

@@ -10,8 +10,9 @@ this doc and the code disagree, the code wins.
                                   ┌─────────────────────────────────────┐
                                   │             apps/landing            │
                                   │  Next.js 15 (App Router), TS, React │
-                                  │  Public marketing only — no auth,    │
-                                  │  no RPC, no game state.              │
+                                  │  Marketing + client components that  │
+                                  │  fetch from the game server. No auth │
+                                  │  yet.                                │
                                   └─────────────────────────────────────┘
 
       Wire protocol (JSON over HTTP / WS), versioned by PROTOCOL_VERSION
@@ -85,10 +86,9 @@ this doc and the code disagree, the code wins.
 
 ### Observability
 
-- All services emit structured logs via `structlog` (Python) /
-  `pino`-compatible JSON (TS).
-- No PII in logs without a redactor.
-- Metrics endpoints are exposed by the server on a separate port.
+- Python server has `structlog` configured for structured logging.
+- TS/landing structured logging, PII redaction, and metrics endpoints on a
+  separate port are not yet implemented.
 
 ### Testing strategy
 
