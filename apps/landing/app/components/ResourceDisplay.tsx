@@ -2,18 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-
-interface PlayerResources {
-  user_id: string;
-  energy: number;
-  energy_capacity: number;
-  energy_rate: number;
-  mineral: number;
-  mineral_capacity: number;
-  mineral_rate: number;
-  last_tick_at: string;
-}
+import { type PlayerResources, createPlayer, getResources } from '../lib/api';
 
 export default function ResourceDisplay() {
   const [userId, setUserId] = useState('');
@@ -25,12 +14,7 @@ export default function ResourceDisplay() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/player/${uid}/resources`);
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`HTTP ${res.status}: ${body}`);
-      }
-      const data = (await res.json()) as PlayerResources;
+      const data = await getResources(uid);
       setResources(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -40,7 +24,7 @@ export default function ResourceDisplay() {
     }
   }, []);
 
-  const createPlayer = async () => {
+  const handleCreatePlayer = async () => {
     if (!userId.trim()) {
       setError('Please enter a user ID');
       return;
@@ -48,16 +32,7 @@ export default function ResourceDisplay() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/player/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId.trim() }),
-      });
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`HTTP ${res.status}: ${body}`);
-      }
-      const data = (await res.json()) as PlayerResources;
+      const data = await createPlayer(userId.trim());
       setResources(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -92,7 +67,7 @@ export default function ResourceDisplay() {
           }}
         />
         <button
-          onClick={createPlayer}
+          onClick={handleCreatePlayer}
           disabled={loading}
           style={{
             padding: '0.5rem 1rem',

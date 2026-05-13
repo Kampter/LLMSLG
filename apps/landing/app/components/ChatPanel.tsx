@@ -2,13 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  text: string;
-  timestamp: string;
-}
+import { type ChatMessage, createPlayer, getResources, consumeResources } from '../lib/api';
 
 export default function ChatPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -49,19 +43,10 @@ export default function ChatPanel() {
     if (createMatch && createMatch[1]) {
       const userId = createMatch[1];
       try {
-        const res = await fetch(`${API_BASE}/api/v1/player/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId }),
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          return `Failed to create account for "${userId}": ${err.detail}`;
-        }
-        const data = await res.json();
+        const data = await createPlayer(userId);
         return `Account "${data.user_id}" created successfully! Starting resources: Energy ${data.energy}, Mineral ${data.mineral}`;
       } catch (e) {
-        return `Error: ${e instanceof Error ? e.message : String(e)}`;
+        return `Failed to create account for "${userId}": ${e instanceof Error ? e.message : String(e)}`;
       }
     }
 
@@ -72,19 +57,14 @@ export default function ChatPanel() {
     if (getMatch && getMatch[1]) {
       const userId = getMatch[1];
       try {
-        const res = await fetch(`${API_BASE}/api/v1/player/${userId}/resources`);
-        if (!res.ok) {
-          const err = await res.json();
-          return `Player "${userId}" not found: ${err.detail}`;
-        }
-        const data = await res.json();
+        const data = await getResources(userId);
         return (
           `${data.user_id} resources:\n` +
           `Energy: ${data.energy} / ${data.energy_capacity} (+${data.energy_rate}/s)\n` +
           `Mineral: ${data.mineral} / ${data.mineral_capacity} (+${data.mineral_rate}/s)`
         );
       } catch (e) {
-        return `Error: ${e instanceof Error ? e.message : String(e)}`;
+        return `Player "${userId}" not found: ${e instanceof Error ? e.message : String(e)}`;
       }
     }
 
@@ -96,19 +76,10 @@ export default function ChatPanel() {
       const amount = parseFloat(consumeMatch[1]);
       const userId = consumeMatch[2];
       try {
-        const res = await fetch(`${API_BASE}/api/v1/player/${userId}/consume`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ energy_cost: amount, mineral_cost: 0 }),
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          return `Failed: ${err.detail}`;
-        }
-        const data = await res.json();
+        const data = await consumeResources(userId, amount, 0);
         return `Consumed ${amount} energy. Remaining: Energy ${data.energy}, Mineral ${data.mineral}`;
       } catch (e) {
-        return `Error: ${e instanceof Error ? e.message : String(e)}`;
+        return `Failed: ${e instanceof Error ? e.message : String(e)}`;
       }
     }
 
