@@ -4,6 +4,7 @@ RPC handlers import from here — never from ``persistence.crud`` directly.
 """
 
 from server.state.service import (
+    ConcurrentModificationError,
     InsufficientResourcesError,
     PlayerAlreadyExistsError,
     consume_resources,
@@ -13,6 +14,7 @@ from server.state.service import (
 )
 
 __all__ = [
+    "ConcurrentModificationError",
     "InsufficientResourcesError",
     "PlayerAlreadyExistsError",
     "consume_resources",

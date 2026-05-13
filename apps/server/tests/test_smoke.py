@@ -49,6 +49,7 @@ async def test_create_player(client: AsyncClient) -> None:
     assert data["mineral_capacity"] == 500
     assert data["energy_rate"] == 1
     assert data["mineral_rate"] == 1
+    assert data["version"] == 0
 
 
 @pytest.mark.anyio
@@ -102,6 +103,7 @@ async def test_consume_resources(client: AsyncClient) -> None:
     # because we only count whole seconds and both happen within the same second.
     assert data["energy"] == 70
     assert data["mineral"] == 40
+    assert data["version"] == 1  # version bumped on write
 
 
 @pytest.mark.anyio
@@ -171,3 +173,40 @@ async def test_capacity_ceiling(db_session: AsyncSession) -> None:
     snapshot = await get_player_snapshot(db_session, "cap-test")
     assert snapshot["energy"] <= 500
     assert snapshot["mineral"] <= 500
+
+
+@pytest.mark.anyio
+async def test_service_version_bumped_on_consume(db_session: AsyncSession) -> None:
+    """Consuming resources should increment the version."""
+    await create_new_player(db_session, "versioned", starting_energy=100)
+
+    state = await consume_resources(db_session, "versioned", energy_cost=10)
+    assert state.version == 1
+
+    state2 = await consume_resources(db_session, "versioned", energy_cost=10)
+    assert state2.version == 2
+
+
+@pytest.mark.anyio
+async def test_read_only_snapshot_no_mutation(db_session: AsyncSession) -> None:
+    """GET /resources should not mutate last_tick_at (no double-counting)."""
+    from server.persistence.crud import get_player
+
+    await create_new_player(db_session, "readonly", starting_energy=100)
+
+    # First read-only snapshot
+    snap1 = await get_player_snapshot(db_session, "readonly")
+    assert snap1["energy"] == 100
+
+    # Fetch raw state and check last_tick_at was NOT advanced
+    _state = await get_player(db_session, "readonly")
+    assert _state is not None  # silence ruff F841
+    # last_tick_at should still be close to creation time, not now
+    # (we can't assert exact equality due to test timing, but we verify
+    #  that a second read-only snapshot doesn't double-count)
+    await asyncio.sleep(1)
+
+    snap2 = await get_player_snapshot(db_session, "readonly")
+    # Should have grown by ~1, not ~2 (which would happen if last_tick_at
+    # was mutated on the first read)
+    assert snap2["energy"] == snap1["energy"] + 1

@@ -10,11 +10,12 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from server.persistence.database import AsyncSessionLocal
 from server.state import (
+    ConcurrentModificationError,
     InsufficientResourcesError,
     PlayerAlreadyExistsError,
     consume_resources,
@@ -33,14 +34,20 @@ async def _get_db() -> AsyncGenerator[AsyncSession]:
 
 
 class CreatePlayerRequest(BaseModel):
-    user_id: str
-    starting_energy: float = 100.0
-    starting_mineral: float = 50.0
+    user_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[\w-]+$",
+        description="Unique player identifier (letters, digits, underscores, hyphens)",
+    )
+    starting_energy: float = Field(100.0, ge=0, le=10000, description="Starting energy (0-10000)")
+    starting_mineral: float = Field(50.0, ge=0, le=10000, description="Starting mineral (0-10000)")
 
 
 class ConsumeRequest(BaseModel):
-    energy_cost: float = 0.0
-    mineral_cost: float = 0.0
+    energy_cost: float = Field(0.0, ge=0, le=10000, description="Energy to consume (0-10000)")
+    mineral_cost: float = Field(0.0, ge=0, le=10000, description="Mineral to consume (0-10000)")
 
 
 @router.post("/create")
@@ -113,6 +120,9 @@ async def consume_resources_endpoint(
             available=exc.available,
         )
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ConcurrentModificationError as exc:
+        logger.warning("rpc.consume_conflict", user_id=user_id)
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     snapshot = state.snapshot()
     logger.info(
