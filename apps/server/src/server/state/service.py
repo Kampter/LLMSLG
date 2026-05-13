@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.exc import StaleDataError
 
 from server.persistence import create_player, get_player, update_player
 from server.persistence.models import PlayerState
@@ -35,6 +36,13 @@ class PlayerAlreadyExistsError(Exception):
         self.user_id = user_id
 
 
+class ConcurrentModificationError(Exception):
+    """Raised when an optimistic-lock check fails (another request modified the row)."""
+
+    def __init__(self) -> None:
+        super().__init__("Resource was modified by another request. Please retry.")
+
+
 async def player_exists(db: AsyncSession, user_id: str) -> bool:
     """Return True if the player already has a record."""
     state = await get_player(db, user_id)
@@ -46,7 +54,7 @@ async def get_player_snapshot(db: AsyncSession, user_id: str) -> dict[str, Any] 
     state = await get_player(db, user_id)
     if state is None:
         return None
-    return state.snapshot()
+    return state.read_only_snapshot()
 
 
 async def create_new_player(
@@ -84,7 +92,9 @@ async def consume_resources(
 ) -> PlayerState:
     """Deduct resources from a player, validating sufficiency first.
 
-    This mutates the stored snapshot so future reads are correct.
+    Uses optimistic locking: bumps ``version`` on commit.  If another
+    request modified the row in the meantime, ``update_player`` will
+    raise a StaleDataError that is converted to ConcurrentModificationError.
     """
     state = await get_player(db, user_id)
     if state is None:
@@ -99,6 +109,7 @@ async def consume_resources(
 
     state.energy -= energy_cost
     state.mineral -= mineral_cost
+    state.version += 1
 
     logger.info(
         "state.consume_resources",
@@ -107,7 +118,17 @@ async def consume_resources(
         mineral_cost=mineral_cost,
         remaining_energy=state.energy,
         remaining_mineral=state.mineral,
+        new_version=state.version,
     )
 
-    await update_player(db, state)
+    try:
+        await update_player(db, state)
+    except StaleDataError as exc:
+        logger.warning(
+            "state.consume_concurrent_conflict",
+            user_id=user_id,
+            error=str(exc),
+        )
+        raise ConcurrentModificationError() from exc
+
     return state
