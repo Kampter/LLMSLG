@@ -17,7 +17,13 @@ export const PROTOCOL_VERSION: Version = '0.0.1';
 export interface PlayerResources {
   user_id: string;
   energy: number;
+  energy_capacity: number;
+  energy_rate: number;
   mineral: number;
+  mineral_capacity: number;
+  mineral_rate: number;
+  version: number;
+  last_tick_at: string;
   created_at: string;
   updated_at: string;
 }
