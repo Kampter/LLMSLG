@@ -44,13 +44,15 @@ pnpm test
 
 ## Server Tests (`apps/server/tests/`)
 
-| Test                             | What it covers               |
-| -------------------------------- | ---------------------------- |
-| `test_create_player`             | POST /create, initial values |
-| `test_get_resources_auto_growth` | Offline income calculation   |
-| `test_consume_resources`         | Resource deduction           |
-| `test_capacity_ceiling`          | Max capacity enforcement     |
-| `test_service_*`                 | Business layer (no HTTP)     |
+| Test                                     | What it covers                       |
+| ---------------------------------------- | ------------------------------------ |
+| `test_create_player`                     | POST /create, initial values         |
+| `test_get_resources_auto_growth`         | Offline income calculation           |
+| `test_consume_resources`                 | Resource deduction                   |
+| `test_capacity_ceiling`                  | Max capacity enforcement             |
+| `test_service_version_bumped_on_consume` | Optimistic locking version increment |
+| `test_read_only_snapshot_no_mutation`    | GET does not mutate last_tick_at     |
+| `test_service_*`                         | Business layer (no HTTP)             |
 
 All server tests use an **in-memory SQLite** database via the `test_db` fixture. No real `game.db` file is touched.
 

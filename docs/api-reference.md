@@ -51,6 +51,7 @@ Create a new player account.
   "mineral": 50,
   "mineral_capacity": 500,
   "mineral_rate": 1,
+  "version": 0,
   "last_tick_at": "2026-05-12T10:00:00+00:00",
   "created_at": "2026-05-12T10:00:00",
   "updated_at": "2026-05-12T10:00:00"
@@ -78,6 +79,7 @@ Fetch current resources for a player (computed on demand, including offline grow
   "mineral": 53,
   "mineral_capacity": 500,
   "mineral_rate": 1,
+  "version": 0,
   "last_tick_at": "2026-05-12T10:00:00+00:00"
 }
 ```
@@ -85,6 +87,7 @@ Fetch current resources for a player (computed on demand, including offline grow
 **Errors:**
 
 - `404 Not Found` — player does not exist
+- `409 Conflict` — concurrent modification (optimistic lock conflict)
 
 ---
 
@@ -107,6 +110,7 @@ Same shape as `GET /resources`, with updated values.
 **Errors:**
 
 - `404 Not Found` — player does not exist
+- `409 Conflict` — concurrent modification (optimistic lock conflict)
 - `400 Bad Request` — insufficient resources
 
 ---

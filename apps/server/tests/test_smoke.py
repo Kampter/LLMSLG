@@ -210,3 +210,39 @@ async def test_read_only_snapshot_no_mutation(db_session: AsyncSession) -> None:
     # Should have grown by ~1, not ~2 (which would happen if last_tick_at
     # was mutated on the first read)
     assert snap2["energy"] == snap1["energy"] + 1
+
+
+# ---------------------------------------------------------------------------
+# Input validation tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_create_player_invalid_user_id(client: AsyncClient) -> None:
+    """Invalid user_id characters should return 422."""
+    response = await client.post(
+        "/api/v1/player/create",
+        json={"user_id": "alice@evil!", "starting_energy": 100},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_create_player_negative_starting_energy(client: AsyncClient) -> None:
+    """Negative starting energy should return 422."""
+    response = await client.post(
+        "/api/v1/player/create",
+        json={"user_id": "negative", "starting_energy": -10},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_consume_negative_cost(client: AsyncClient) -> None:
+    """Negative energy_cost should return 422."""
+    await client.post("/api/v1/player/create", json={"user_id": "neg-cost"})
+    response = await client.post(
+        "/api/v1/player/neg-cost/consume",
+        json={"energy_cost": -10},
+    )
+    assert response.status_code == 422
