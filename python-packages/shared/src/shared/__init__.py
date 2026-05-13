@@ -11,8 +11,16 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-__version__ = "0.0.1"
-PROTOCOL_VERSION = "0.0.1"
+from shared.models.auth import (
+    LoginRequest,
+    RefreshRequest,
+    RegisterRequest,
+    TokenResponse,
+)
+from shared.models.user import User, UserId, UserProfile
+
+__version__ = "0.1.0"
+PROTOCOL_VERSION = "0.1.0"
 
 
 class PlayerResources(BaseModel):
@@ -31,4 +39,15 @@ class PlayerResources(BaseModel):
     updated_at: str
 
 
-__all__ = ["PROTOCOL_VERSION", "PlayerResources", "__version__"]
+__all__ = [
+    "PROTOCOL_VERSION",
+    "LoginRequest",
+    "PlayerResources",
+    "RefreshRequest",
+    "RegisterRequest",
+    "TokenResponse",
+    "User",
+    "UserId",
+    "UserProfile",
+    "__version__",
+]

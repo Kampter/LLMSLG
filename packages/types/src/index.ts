@@ -7,7 +7,7 @@
 
 export type Version = `${number}.${number}.${number}`;
 
-export const PROTOCOL_VERSION: Version = '0.0.1';
+export const PROTOCOL_VERSION: Version = '0.1.0';
 
 // ---------------------------------------------------------------------------
 // Game protocol types
@@ -33,3 +33,10 @@ export interface ApiResponse<T> {
   data: T;
   success: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Auth & User types (v0.1.0)
+// ---------------------------------------------------------------------------
+
+export type { User, UserId, UserProfile } from './user.js';
+export type { LoginRequest, RefreshRequest, RegisterRequest, TokenResponse } from './auth.js';
