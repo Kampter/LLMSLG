@@ -1,5 +1,7 @@
 """Behavioural tests for the chat loop with Tool Use."""
 
+# mypy: disable-error-code=arg-type
+
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +22,9 @@ class FakeLLM:
         self._replies: deque[ChatResponse] = deque(replies)
         self.calls: list[list[Message]] = []
 
-    def chat(self, messages: Sequence[Message], *, tools: list[dict] | None = None) -> ChatResponse:
+    def chat(
+        self, messages: Sequence[Message], *, tools: list[dict[str, Any]] | None = None
+    ) -> ChatResponse:
         self.calls.append(list(messages))
         if not self._replies:
             msg = "FakeLLM ran out of scripted replies."
@@ -45,9 +49,9 @@ class FakeGameClient:
 
     def __init__(self) -> None:
         self.players: dict[str, dict[str, Any]] = {}
-        self.call_log: list[tuple[str, dict]] = []
+        self.call_log: list[tuple[str, dict[str, Any]]] = []
 
-    async def create_account(self, user_id: str, **kwargs: Any) -> dict:
+    async def create_account(self, user_id: str, **kwargs: Any) -> dict[str, Any]:
         self.call_log.append(("create_account", {"user_id": user_id, **kwargs}))
         if user_id in self.players:
             raise RuntimeError(f"Player '{user_id}' already exists")
@@ -58,13 +62,13 @@ class FakeGameClient:
         }
         return self.players[user_id]
 
-    async def get_resources(self, user_id: str) -> dict:
+    async def get_resources(self, user_id: str) -> dict[str, Any]:
         self.call_log.append(("get_resources", {"user_id": user_id}))
         if user_id not in self.players:
             raise RuntimeError(f"Player '{user_id}' not found")
         return self.players[user_id]
 
-    async def consume_resources(self, user_id: str, **kwargs: Any) -> dict:
+    async def consume_resources(self, user_id: str, **kwargs: Any) -> dict[str, Any]:
         self.call_log.append(("consume_resources", {"user_id": user_id, **kwargs}))
         if user_id not in self.players:
             raise RuntimeError(f"Player '{user_id}' not found")

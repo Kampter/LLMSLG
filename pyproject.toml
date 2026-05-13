@@ -118,6 +118,8 @@ markers = [
     "slow: tests that take >1s",
     "integration: requires external services",
     "gpu: requires a GPU",
+    "eval: end-to-end eval tests that exercise the full agent→server flow",
+    "benchmark: performance / latency benchmarks",
 ]
 
 [tool.coverage.run]

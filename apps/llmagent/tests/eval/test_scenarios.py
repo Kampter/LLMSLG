@@ -10,25 +10,24 @@ Run with: ``pytest apps/llmagent/tests/eval/ -v -m eval``
 from __future__ import annotations
 
 import time
+from typing import Any
 
 import pytest
 from llmagent.game import GameClient
 
 pytestmark = pytest.mark.eval
 
-SERVER_URL = "http://localhost:8000"
-
 
 class EvalGameClient(GameClient):
     """GameClient with timing and retry helpers for eval scenarios."""
 
-    async def timed_create_account(self, user_id: str):
+    async def timed_create_account(self, user_id: str) -> tuple[dict[str, Any], float]:
         start = time.perf_counter()
         result = await self.create_account(user_id)
         elapsed = time.perf_counter() - start
         return result, elapsed
 
-    async def timed_get_resources(self, user_id: str):
+    async def timed_get_resources(self, user_id: str) -> tuple[dict[str, Any], float]:
         start = time.perf_counter()
         result = await self.get_resources(user_id)
         elapsed = time.perf_counter() - start
@@ -42,9 +41,9 @@ class EvalGameClient(GameClient):
 
 @pytest.mark.anyio
 @pytest.mark.eval
-async def test_scenario_create_and_check_resources() -> None:
+async def test_scenario_create_and_check_resources(live_server: str) -> None:
     """Scenario: Create an account and immediately check its resources."""
-    client = EvalGameClient(SERVER_URL)
+    client = EvalGameClient(live_server)
     try:
         user_id = f"eval_scenario_{int(time.time())}"
 
@@ -67,9 +66,9 @@ async def test_scenario_create_and_check_resources() -> None:
 
 @pytest.mark.anyio
 @pytest.mark.eval
-async def test_scenario_duplicate_account_rejected() -> None:
+async def test_scenario_duplicate_account_rejected(live_server: str) -> None:
     """Scenario: Creating the same account twice must fail."""
-    client = EvalGameClient(SERVER_URL)
+    client = EvalGameClient(live_server)
     try:
         user_id = f"eval_dup_{int(time.time())}"
 
@@ -83,9 +82,9 @@ async def test_scenario_duplicate_account_rejected() -> None:
 
 @pytest.mark.anyio
 @pytest.mark.eval
-async def test_scenario_consume_and_verify() -> None:
+async def test_scenario_consume_and_verify(live_server: str) -> None:
     """Scenario: Create, consume resources, verify the deduction."""
-    client = EvalGameClient(SERVER_URL)
+    client = EvalGameClient(live_server)
     try:
         user_id = f"eval_consume_{int(time.time())}"
 
@@ -103,9 +102,9 @@ async def test_scenario_consume_and_verify() -> None:
 
 @pytest.mark.anyio
 @pytest.mark.eval
-async def test_scenario_insufficient_resources() -> None:
+async def test_scenario_insufficient_resources(live_server: str) -> None:
     """Scenario: Consuming more than available must fail gracefully."""
-    client = EvalGameClient(SERVER_URL)
+    client = EvalGameClient(live_server)
     try:
         user_id = f"eval_poor_{int(time.time())}"
 
@@ -125,9 +124,9 @@ async def test_scenario_insufficient_resources() -> None:
 @pytest.mark.anyio
 @pytest.mark.eval
 @pytest.mark.benchmark
-async def test_latency_create_account() -> None:
+async def test_latency_create_account(live_server: str) -> None:
     """Benchmark: Create account latency must be < 500ms."""
-    client = EvalGameClient(SERVER_URL)
+    client = EvalGameClient(live_server)
     try:
         user_id = f"eval_perf_{int(time.time())}"
         start = time.perf_counter()
@@ -141,9 +140,9 @@ async def test_latency_create_account() -> None:
 @pytest.mark.anyio
 @pytest.mark.eval
 @pytest.mark.benchmark
-async def test_throughput_sequential_reads() -> None:
+async def test_throughput_sequential_reads(live_server: str) -> None:
     """Benchmark: 10 sequential reads should complete in < 3s."""
-    client = EvalGameClient(SERVER_URL)
+    client = EvalGameClient(live_server)
     try:
         user_id = f"eval_throughput_{int(time.time())}"
         await client.create_account(user_id)
