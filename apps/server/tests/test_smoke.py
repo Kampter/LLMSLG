@@ -171,6 +171,7 @@ async def test_capacity_ceiling(db_session: AsyncSession) -> None:
     await asyncio.sleep(1)
 
     snapshot = await get_player_snapshot(db_session, "cap-test")
+    assert snapshot is not None
     assert snapshot["energy"] <= 500
     assert snapshot["mineral"] <= 500
 
@@ -196,6 +197,7 @@ async def test_read_only_snapshot_no_mutation(db_session: AsyncSession) -> None:
 
     # First read-only snapshot
     snap1 = await get_player_snapshot(db_session, "readonly")
+    assert snap1 is not None
     assert snap1["energy"] == 100
 
     # Fetch raw state and check last_tick_at was NOT advanced
@@ -207,6 +209,7 @@ async def test_read_only_snapshot_no_mutation(db_session: AsyncSession) -> None:
     await asyncio.sleep(1)
 
     snap2 = await get_player_snapshot(db_session, "readonly")
+    assert snap2 is not None
     # Should have grown by ~1, not ~2 (which would happen if last_tick_at
     # was mutated on the first read)
     assert snap2["energy"] == snap1["energy"] + 1
