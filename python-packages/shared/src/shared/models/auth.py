@@ -32,7 +32,7 @@ class TokenResponse(BaseModel):
     """Response returned on successful authentication."""
 
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = Field(default="bearer")
     expires_in: int
 
 
