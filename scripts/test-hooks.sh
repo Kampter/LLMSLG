@@ -9,7 +9,7 @@
 # Coverage (all wired hooks now have at least one case):
 #   • pre-bash-deny-secrets.sh    — every documented deny pattern + every
 #                                    allowlist boundary + audit-log shape.
-#   • user-prompt-detect-dev.sh   — branch=main vs branch=feature, dev vs
+#   • user-prompt-detect-dev.sh   — primary worktree (.git dir) vs sub-worktree (.git file), dev vs
 #                                    read-only keywords + audit-log shape.
 #   • session-start-context.sh    — JSON shape + retention prune.
 #   • stop-summary.sh             — session_id round-trips from stdin JSON
@@ -114,10 +114,9 @@ assert_deny_secrets 'echo sk-placeholder'                allow 'sk- short non-to
 #         $3 = expected decision: "block" or "allow"
 #         $4 = human label
 #
-# The hook reads $CLAUDE_PROJECT_DIR (defaults to PWD) and runs
-# `git rev-parse --abbrev-ref HEAD` against it. We can't easily fake that
-# from outside, so we make $CLAUDE_PROJECT_DIR point at a temporary git
-# worktree where HEAD is the branch under test.
+# The hook checks whether $CLAUDE_PROJECT_DIR/.git is a directory (primary
+# worktree) or a file (sub-worktree). We simulate primary worktrees with
+# temporary git repos and sub-worktrees with a .git file pointing elsewhere.
 # ---------------------------------------------------------------------------
 setup_fake_repo() {
   local branch="$1"
@@ -135,6 +134,14 @@ setup_fake_repo() {
       [ "$current" = "$branch" ] || git -c user.email=t@t -c user.name=t branch -m "$current" "$branch"
     fi
   )
+  printf '%s' "$tmp"
+}
+
+setup_fake_sub_worktree() {
+  local tmp
+  tmp=$(mktemp -d)
+  # Simulate a sub-worktree: .git is a file pointing to a gitdir
+  printf 'gitdir: /tmp/fake-gitdir\n' > "$tmp/.git"
   printf '%s' "$tmp"
 }
 
@@ -157,22 +164,45 @@ assert_prompt_detect_dev() {
   fi
 }
 
-step "user-prompt-detect-dev.sh — branch=main, dev keywords → block"
+assert_prompt_detect_dev_with_dir() {
+  local prompt="$1" proj_dir="$2" expect="$3" label="$4"
+  tests=$((tests + 1))
+  local payload result decision="allow"
+  payload=$(jq -nc --arg p "$prompt" '{prompt: $p}')
+  result=$(CLAUDE_PROJECT_DIR="$proj_dir" printf '%s' "$payload" \
+    | CLAUDE_PROJECT_DIR="$proj_dir" bash .claude/hooks/user-prompt-detect-dev.sh 2>/dev/null || true)
+  if printf '%s' "$result" | jq -e '.decision == "block"' >/dev/null 2>&1; then
+    decision="block"
+  fi
+  if [ "$decision" = "$expect" ]; then
+    ok "detect-dev [$expect] $label"
+  else
+    fail "detect-dev expected $expect got $decision: $label (prompt: $prompt)"
+  fi
+}
+
+step "user-prompt-detect-dev.sh — primary worktree (.git is dir), dev keywords → block"
 assert_prompt_detect_dev 'implement retry in LLMClient'  main  block  'implement on main'
 assert_prompt_detect_dev 'fix the typo in README'        main  block  'fix on main'
 assert_prompt_detect_dev 'add a new test'                main  block  'add on main'
 assert_prompt_detect_dev 'refactor the agent loop'       main  block  'refactor on main'
 
-step "user-prompt-detect-dev.sh — branch=main, read-only intents → allow"
-assert_prompt_detect_dev 'explain the agent loop'        main  allow  'explain on main'
-assert_prompt_detect_dev 'how does the server persist?'  main  allow  'how does on main'
-assert_prompt_detect_dev 'what is the wire protocol'     main  allow  'what is on main'
-assert_prompt_detect_dev 'show me where X is defined'    main  allow  'show me on main'
-assert_prompt_detect_dev '/start-task agent-retry'       main  allow  'slash command on main'
+step "user-prompt-detect-dev.sh — primary worktree, read-only intents → allow"
+assert_prompt_detect_dev 'explain the agent loop'        main  allow  'explain on primary'
+assert_prompt_detect_dev 'how does the server persist?'  main  allow  'how does on primary'
+assert_prompt_detect_dev 'what is the wire protocol'     main  allow  'what is on primary'
+assert_prompt_detect_dev 'show me where X is defined'    main  allow  'show me on primary'
+assert_prompt_detect_dev '/start-task agent-retry'       main  allow  'slash command on primary'
 
-step "user-prompt-detect-dev.sh — branch=feature, dev keywords → allow"
-assert_prompt_detect_dev 'implement retry in LLMClient'  feature/x  allow  'implement on feature'
-assert_prompt_detect_dev 'fix the typo in README'        feature/x  allow  'fix on feature'
+step "user-prompt-detect-dev.sh — primary worktree on feature branch, dev keywords → block"
+assert_prompt_detect_dev 'implement retry in LLMClient'  feature/x  block  'implement on primary feature'
+assert_prompt_detect_dev 'fix the typo in README'        feature/x  block  'fix on primary feature'
+
+step "user-prompt-detect-dev.sh — sub-worktree (.git is file), dev keywords → allow"
+proj=$(setup_fake_sub_worktree)
+assert_prompt_detect_dev_with_dir 'implement retry in LLMClient' "$proj" allow  'implement on sub-worktree'
+assert_prompt_detect_dev_with_dir 'fix the typo in README'       "$proj" allow  'fix on sub-worktree'
+rm -rf "$proj"
 
 # ---------------------------------------------------------------------------
 # session-start-context.sh
