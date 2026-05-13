@@ -2,7 +2,7 @@
 
 Reads from environment variables so the same binary works against any
 OpenAI-compatible third-party provider (DeepSeek, Moonshot, Zhipu, etc.) by
-just changing `OPENAI_BASE_URL`.
+just changing ``OPENAI_BASE_URL``.
 """
 
 from __future__ import annotations
@@ -12,7 +12,12 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field
 
-DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant."
+DEFAULT_SYSTEM_PROMPT = (
+    "You are the AI commander of a space exploration base. "
+    "You help the player manage their resources (energy and mineral). "
+    "You can create accounts, check resources, and spend resources. "
+    "Always be concise and direct. If a player tries something risky, warn them."
+)
 
 
 class AgentConfig(BaseModel):
@@ -22,6 +27,7 @@ class AgentConfig(BaseModel):
     base_url: str | None = None
     model: str = Field(min_length=1)
     system_prompt: str = DEFAULT_SYSTEM_PROMPT
+    server_url: str = "http://localhost:8000"
 
     @classmethod
     def from_env(
@@ -31,6 +37,7 @@ class AgentConfig(BaseModel):
         base_url: str | None = None,
         model: str | None = None,
         system_prompt: str | None = None,
+        server_url: str | None = None,
     ) -> Self:
         resolved_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not resolved_key:
@@ -49,4 +56,7 @@ class AgentConfig(BaseModel):
             system_prompt=(
                 system_prompt or os.environ.get("LLMAGENT_SYSTEM_PROMPT") or DEFAULT_SYSTEM_PROMPT
             ),
+            server_url=server_url
+            or os.environ.get("LLMAGENT_SERVER_URL")
+            or "http://localhost:8000",
         )

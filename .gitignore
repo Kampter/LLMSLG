@@ -81,6 +81,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# ─── SQLite databases ───────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
 # ─── Misc local ─────────────────────────────────────────────────────────────
 .scratch/
 tmp/

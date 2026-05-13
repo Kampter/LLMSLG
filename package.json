@@ -11,6 +11,10 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
+    "dev:landing": "pnpm --filter @llmslg/landing dev",
+    "dev:server": "bash scripts/dev-server.sh",
+    "dev:agent": "bash scripts/dev-agent.sh",
+    "dev:all": "concurrently \"pnpm:dev:server\" \"pnpm:dev:landing\"",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
@@ -25,9 +29,10 @@
     "bootstrap": "bash scripts/bootstrap.sh"
   },
   "devDependencies": {
-    "turbo": "^2.3.0",
+    "@types/node": "catalog:",
+    "concurrently": "^9.2.1",
     "prettier": "catalog:",
-    "typescript": "catalog:",
-    "@types/node": "catalog:"
+    "turbo": "^2.9.12",
+    "typescript": "catalog:"
   }
 }
