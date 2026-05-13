@@ -1,14 +1,7 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalDependencies": [
-    "pnpm-lock.yaml",
-    "uv.lock",
-    ".env",
-    ".env.local",
-    "tsconfig.base.json",
-    "ruff.toml"
-  ],
+  "globalDependencies": ["pnpm-lock.yaml", "uv.lock", ".env", ".env.local", "tsconfig.base.json"],
   "globalEnv": ["NODE_ENV", "CI", "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY"],
   "globalPassThroughEnv": ["PATH", "HOME", "UV_CACHE_DIR", "PNPM_HOME"],
   "tasks": {

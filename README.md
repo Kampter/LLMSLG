@@ -69,7 +69,7 @@ LLMSLG/
 
 ## Contributing
 
-Run `pnpm check` locally before opening a PR. CI re-runs everything plus
-integration tests; both must be green to merge.
+Run `pnpm check` locally before opening a PR. CI re-runs everything; all
+checks must be green to merge.
 
 License: TBD.

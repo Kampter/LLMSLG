@@ -22,8 +22,9 @@ paths:
 
 - **No real network, no real clock, no real RNG in unit tests.** Inject these.
   Use `freezegun` (Python) or fake timers (Vitest) for time.
-- **No real LLM calls.** Use the `FakeLLM` fixture in `apps/llmagent/tests/conftest.py`
-  (or equivalent). Recorded fixtures are okay; live calls are not.
+- **No real LLM calls.** Use the `FakeLLM` fixture defined in `apps/llmagent/tests/test_chat.py`.
+  Promote it to `conftest.py` when a second test module needs the same stub.
+  Recorded fixtures are okay; live calls are not.
 - **No tests that depend on each other.** Each test must pass in isolation.
 
 ## Coverage
