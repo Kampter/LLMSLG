@@ -14,6 +14,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TextIO
 
+import httpx
 from dotenv import load_dotenv
 
 from llmagent import __version__
@@ -123,8 +124,14 @@ async def _execute_tool(game_client: GameClient, name: str, arguments: str) -> d
                 mineral_cost=params.get("mineral_cost", 0.0),
             )
         return {"error": f"Unknown tool: {name}"}
+    except KeyError as exc:
+        return {"error": f"Missing required parameter: {exc}"}
+    except httpx.HTTPStatusError as exc:
+        return {"error": f"Server error {exc.response.status_code}: {exc}"}
+    except httpx.HTTPError as exc:
+        return {"error": f"Network error: {exc}"}
     except Exception as exc:
-        return {"error": str(exc)}
+        return {"error": f"Unexpected error: {exc}"}
 
 
 def _build_parser() -> argparse.ArgumentParser:
