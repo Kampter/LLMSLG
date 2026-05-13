@@ -38,8 +38,13 @@ class PlayerState(Base):
     mineral_capacity: Mapped[float] = mapped_column(Float, default=500.0)
     mineral_rate: Mapped[float] = mapped_column(Float, default=1.0)
 
-    # Optimistic locking
-    version: Mapped[int] = mapped_column(Integer, default=0)
+    # Optimistic locking — NOT NULL is required by SQLAlchemy versioning.
+    version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    __mapper_args__ = {  # noqa: RUF012 — SQLAlchemy declarative mapper config
+        "version_id_col": version,
+        "version_id_generator": False,
+    }
 
     # Anchor for offline / idle income calculation
     last_tick_at: Mapped[datetime] = mapped_column(default=_utc_now)
