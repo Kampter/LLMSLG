@@ -17,8 +17,8 @@ don't trust the description, you read the diff.
 - Injection vectors: SQL, prompt, command, HTML, JS.
 - Secret handling (see `.claude/rules/secrets-handling.md`).
 - Cryptographic correctness (don't hand-roll, don't downgrade).
-- Trust boundary violations: server trusting client, client trusting agent,
-  agent trusting LLM output.
+- Trust boundary violations: Game Server trusting BFF, BFF trusting browser,
+  LLM Service trusting LLM output.
 - Logging that could leak PII or secrets.
 
 ## Out of scope (explicitly)

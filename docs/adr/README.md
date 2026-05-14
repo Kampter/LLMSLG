@@ -24,9 +24,11 @@ proposed -> accepted -> (later) superseded by ADR M
 | ---- | --------------------------------- | -------- |
 | 0001 | [Monorepo layout][0001]           | accepted |
 | 0002 | [Claude Code harness scope][0002] | accepted |
+| 0003 | [Production architecture][0003]   | proposed |
 
 [0001]: ./0001-monorepo-layout.md
 [0002]: ./0002-claude-harness.md
+[0003]: ./0003-production-architecture.md
 
 ## Template
 

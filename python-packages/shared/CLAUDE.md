@@ -1,7 +1,7 @@
 # python-packages/shared — Claude notes
 
 Shared Python models, protocol enums, and serialization helpers used by both
-`apps/llmagent` and `apps/server`.
+the **LLM Service** (`apps/llmagent`) and `apps/server`.
 
 ## Rules
 

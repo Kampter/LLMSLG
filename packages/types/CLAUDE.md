@@ -10,7 +10,7 @@ Shared TypeScript type definitions. No runtime code.
   type or name, this file changes in the same PR.
 - **Never depend on app packages.** Types here flow downstream only.
 - **Version bumps are coordinated.** Changing a field is a breaking change to
-  the agent, server, and landing. Open an ADR for non-trivial schema changes.
+  the LLM Service, Game Server, and landing. Open an ADR for non-trivial schema changes.
 
 ## Build
 

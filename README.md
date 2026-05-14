@@ -1,20 +1,25 @@
 # LLMSLG
 
-LLM-driven SLG (Simulation/Strategy Game) monorepo. Three runtimes share one workspace:
+LLM-driven SLG (Simulation/Strategy Game) monorepo. Three runtimes share one
+workspace:
 
-| App             | Language    | Tooling          | Purpose                                   |
-| --------------- | ----------- | ---------------- | ----------------------------------------- |
-| `apps/llmagent` | Python 3.12 | `uv`             | Client-side LLM agent that plays the game |
-| `apps/server`   | Python 3.12 | `uv`             | Authoritative game server                 |
-| `apps/landing`  | TypeScript  | `pnpm` + Next.js | Public landing page                       |
+| App             | Language    | Tooling          | Purpose                                     |
+| --------------- | ----------- | ---------------- | ------------------------------------------- |
+| `apps/landing`  | TypeScript  | `pnpm` + Next.js | Game client + BFF — SLG UI, chat, auth      |
+| `apps/server`   | Python 3.12 | `uv`             | Authoritative game server (Railway)         |
+| `apps/llmagent` | Python 3.12 | `uv`             | LLM Service — agent orchestration (Railway) |
 
 Shared code lives in `packages/*` (TS) and `python-packages/*` (Python).
+
+**Production stack:** Vercel (frontend) + Railway (Python services) +
+Supabase (Auth + Postgres). See [ADR 0003](docs/adr/0003-production-architecture.md).
 
 ## Prerequisites
 
 - Node.js ≥ 20.18 (`nvm use`)
 - pnpm ≥ 9.12 (`corepack enable`)
 - Python ≥ 3.12 + [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- Supabase CLI (`brew install supabase/tap/supabase` or `npm install -g supabase`)
 
 ## Bootstrap
 
@@ -56,11 +61,13 @@ See [`docs/claude-code-guide.md`](docs/claude-code-guide.md) for the full tour.
 ```
 LLMSLG/
 ├── apps/                   # Top-level runtimes
-│   ├── llmagent/
-│   ├── server/
-│   └── landing/
+│   ├── llmagent/           # LLM Service (agent orchestration)
+│   ├── server/             # Game Server (authoritative state)
+│   └── landing/            # Game client + BFF (Next.js)
 ├── packages/               # Shared TypeScript packages
+│   └── types/              # TS mirror of Python shared models
 ├── python-packages/        # Shared Python packages
+│   └── shared/             # Pydantic models (source of truth)
 ├── tooling/                # Internal dev tools (TS)
 ├── scripts/                # Cross-language repo scripts
 ├── docs/                   # Architecture, ADRs, onboarding

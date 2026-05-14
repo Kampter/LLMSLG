@@ -98,7 +98,7 @@ Installed skills:
 | `ts-quality`      | Run Prettier check + ESLint + tsc + Vitest.           |
 | `run-tests`       | Pick the right tool per package; report pass/fail.    |
 | `security-review` | Pre-merge security checklist.                         |
-| `debug-game-loop` | Trace the agent's perceive-decide-act loop.           |
+| `debug-game-loop` | Trace the LLM Service's chat-to-action pipeline.      |
 | `plan-feature`    | Structured planning template for non-trivial changes. |
 | `update-protocol` | Coordinated shared-schema update.                     |
 | `audit-rpc`       | Validate every RPC handler against the contract.      |
@@ -204,9 +204,7 @@ entering a new worktree (~1-2 min). `.gitignore` already excludes
 appear in PRs.
 
 **Caveats.** `apps/landing` dev server hard-codes port 3000 — parallel
-`pnpm dev` across worktrees collides; run one at a time. `apps/server`'s
-SQLite default path may also collide across parallel `uv run server`
-processes.
+`pnpm dev` across worktrees collides; run one at a time.
 
 ## What is NOT in this harness
 

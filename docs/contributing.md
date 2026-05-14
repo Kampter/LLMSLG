@@ -68,6 +68,7 @@ If your PR touches `python-packages/shared` or `packages/types`:
 - Both packages must change together.
 - Bump versions in both `pyproject.toml` and `package.json`.
 - Add an ADR if the change is breaking.
+- Update both **Game Server** (`apps/server`) and **LLM Service** (`apps/llmagent`) consumers.
 - See [`.claude/skills/update-protocol/SKILL.md`](../.claude/skills/update-protocol/SKILL.md).
 
 ## What not to do

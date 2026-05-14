@@ -35,8 +35,8 @@ you should invoke this skill.
    - If you use `zod` for runtime parsing, update the schema too.
 
 4. **Update consumers.**
-   - `apps/server`: validation + state transitions that touch the field.
-   - `apps/llmagent`: encode/decode + prompt templates referencing the field.
+   - `apps/server` (Game Server): validation + state transitions that touch the field.
+   - `apps/llmagent` (LLM Service): encode/decode + prompt templates referencing the field.
    - `apps/landing`: rare — usually only if the landing page shows it.
 
 5. **Bump versions.**

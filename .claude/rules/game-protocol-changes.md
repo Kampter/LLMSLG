@@ -8,8 +8,8 @@ paths:
 
 # Game protocol changes
 
-These two packages are the contract between `apps/llmagent`, `apps/server`,
-and `apps/landing`. Treat any change here as breaking.
+These two packages are the contract between the **LLM Service** (`apps/llmagent`),
+`apps/server`, and `apps/landing`. Treat any change here as breaking.
 
 ## Coordination checklist
 
@@ -18,7 +18,7 @@ and `apps/landing`. Treat any change here as breaking.
 - [ ] Version bumped in both `pyproject.toml` and `package.json` for the package.
 - [ ] At least one round-trip serialization test added/updated.
 - [ ] `apps/server` validation updated.
-- [ ] `apps/llmagent` decode/encode paths updated.
+- [ ] `apps/llmagent` (LLM Service) decode/encode paths updated.
 - [ ] If the wire format changed: ADR added under `docs/adr/`.
 
 ## Patterns that won't bite you later

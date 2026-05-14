@@ -2,11 +2,12 @@
 
 ## Test Levels
 
-| Level         | Location                        | Speed  | Scope                      |
-| ------------- | ------------------------------- | ------ | -------------------------- |
-| **Unit**      | `apps/*/tests/test_*.py`        | < 1s   | Single module, mocked deps |
-| **Eval**      | `apps/llmagent/tests/eval/`     | 1-10s  | Agent→Server integration   |
-| **Benchmark** | Marked `@pytest.mark.benchmark` | Varies | Performance/latency        |
+| Level           | Location                        | Speed  | Scope                      |
+| --------------- | ------------------------------- | ------ | -------------------------- |
+| **Unit**        | `apps/*/tests/test_*.py`        | < 1s   | Single module, mocked deps |
+| **Integration** | `apps/*/tests/`                 | 1-5s   | Service + in-memory DB     |
+| **Eval**        | `apps/llmagent/tests/eval/`     | 1-10s  | LLM Service → Game Server  |
+| **Benchmark**   | Marked `@pytest.mark.benchmark` | Varies | Performance/latency        |
 
 ## Running Tests
 
@@ -19,8 +20,8 @@ pnpm py:test
 # Server unit tests only
 PYTHONPATH=apps/server/src uv run pytest apps/server/tests/ -v
 
-# LLM Agent unit tests only
-PYTHONPATH=apps/llmagent/src uv run pytest apps/llmagent/tests/test_chat.py -v
+# LLM Service unit tests only
+PYTHONPATH=apps/llmagent/src uv run pytest apps/llmagent/tests/ -v
 
 # Eval tests (requires server running on localhost:8000)
 PYTHONPATH=apps/llmagent/src uv run pytest apps/llmagent/tests/eval/ -v -m eval
@@ -46,7 +47,7 @@ pnpm test
 
 | Test                                     | What it covers                       |
 | ---------------------------------------- | ------------------------------------ |
-| `test_create_player`                     | POST /create, initial values         |
+| `test_create_player`                     | POST /player, initial values         |
 | `test_get_resources_auto_growth`         | Offline income calculation           |
 | `test_consume_resources`                 | Resource deduction                   |
 | `test_capacity_ceiling`                  | Max capacity enforcement             |
@@ -54,17 +55,30 @@ pnpm test
 | `test_read_only_snapshot_no_mutation`    | GET does not mutate last_tick_at     |
 | `test_service_*`                         | Business layer (no HTTP)             |
 
-All server tests use an **in-memory SQLite** database via the `test_db` fixture. No real `game.db` file is touched.
+**Database:**
 
-## Agent Tests (`apps/llmagent/tests/`)
+- **Current:** In-memory SQLite via `test_db` fixture.
+- **Future:** Local Postgres via `supabase start` for integration tests that
+  exercise Postgres-specific features (RLS, JSONB, etc.).
 
-| Test                           | What it covers                |
-| ------------------------------ | ----------------------------- |
-| `test_run_chat_*`              | Chat loop mechanics (FakeLLM) |
-| `test_run_chat_with_tool_call` | Full tool use flow            |
-| `test_execute_tool_*`          | Tool routing to GameClient    |
+All server tests use SQLAlchemy async ORM. The `test_db` fixture creates a
+fresh in-memory database per test function.
 
-All agent tests use **FakeLLM** (no real API calls) and **FakeGameClient** (no real HTTP).
+## LLM Service Tests (`apps/llmagent/tests/`)
+
+| Test                      | What it covers                      |
+| ------------------------- | ----------------------------------- |
+| `test_agent_crud`         | Create, read, update, delete agents |
+| `test_chat_sse_streaming` | SSE event formatting                |
+| `test_action_parser_*`    | NL → structured action parsing      |
+| `test_context_window_*`   | Conversation history truncation     |
+| `test_token_budget_*`     | Per-agent token accounting          |
+
+All LLM Service tests use:
+
+- **FakeLLM**: No real API calls
+- **FakeGameClient**: No real HTTP to Game Server
+- **In-memory DB**: SQLite for agent/conversation storage
 
 ## Eval Tests (`apps/llmagent/tests/eval/`)
 
@@ -85,6 +99,7 @@ These require the game server to be running on `localhost:8000`.
 @pytest.mark.eval       # Requires running server
 @pytest.mark.benchmark  # Performance test
 @pytest.mark.slow       # > 1s
+@pytest.mark.integration # Requires Postgres (future)
 ```
 
 ## Log Verification
@@ -96,3 +111,15 @@ Server logs are structured JSON via structlog. Each RPC handler logs:
 - `{event}_conflict` / `{event}_insufficient` — error cases
 
 Logs are written to stdout in JSON format and can be captured by log aggregation tools.
+
+## CI
+
+`pnpm check` (root) runs:
+
+1. Ruff format check
+2. Ruff lint
+3. Mypy (Python)
+4. tsc (TypeScript)
+5. ESLint
+6. pytest (all Python packages)
+7. vitest (all TS packages)

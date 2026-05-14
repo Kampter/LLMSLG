@@ -1,36 +1,34 @@
 # llmagent
 
-LLM-driven client agent. Observes game state, decides on actions, talks to the
-authoritative server via the shared wire protocol.
+**LLM Service.** Server-side agent orchestration. Manages agent lifecycle,
+conversation history, LLM calls, and natural-language-to-action parsing.
 
-## Run
+Deployed on Railway as a FastAPI service. Not a CLI tool — see ADR 0003 for
+context on the architecture shift.
 
-Copy the template and fill in your provider credentials:
-
-```bash
-cp .env.example .env
-$EDITOR .env
-uv run llmagent
-```
-
-`.env` is gitignored. CLI flags override anything in `.env`, and exported
-shell env vars override `.env` too (the loader uses `override=False`):
+## Run (local)
 
 ```bash
-uv run llmagent --api-key sk-... --base-url https://... --model gpt-4o-mini
-uv run llmagent --env-file ./other.env
+uv sync
+uv run uvicorn llmagent.app:create_app --reload --port 8001
 ```
 
-The four variables read at startup (also documented in `.env.example`):
+## Environment variables
 
-| Variable                 | Required | Purpose                                         |
-| ------------------------ | -------- | ----------------------------------------------- |
-| `OPENAI_API_KEY`         | yes      | Provider token.                                 |
-| `OPENAI_BASE_URL`        | no       | OpenAI-compatible endpoint. Defaults to OpenAI. |
-| `LLMAGENT_MODEL`         | yes      | Model id the provider understands.              |
-| `LLMAGENT_SYSTEM_PROMPT` | no       | Defaults to a generic helpful-assistant prompt. |
+| Variable                   | Required | Purpose                              |
+| -------------------------- | -------- | ------------------------------------ |
+| `ANTHROPIC_API_KEY`        | yes      | Anthropic API token                  |
+| `OPENAI_API_KEY`           | no       | OpenAI API token (fallback)          |
+| `DATABASE_URL`             | yes      | Postgres connection string           |
+| `GAME_SERVER_URL`          | yes      | Game Server internal URL             |
+| `INTERNAL_API_KEY`         | yes      | Shared secret for BFF verification   |
+| `MAX_CONCURRENT_LLM_CALLS` | no       | Semaphore limit (default: 20)        |
+| `TOKEN_BUDGET_PER_AGENT`   | no       | Hourly token budget (default: 50000) |
 
-Tests:
+Copy `.env.example` to `.env` and fill in your credentials.
+`.env` is gitignored.
+
+## Tests
 
 ```bash
 uv sync --all-packages
@@ -39,6 +37,6 @@ uv run --package llmagent pytest
 
 ## Status
 
-Conversational scaffold only. The agent talks to any OpenAI-compatible API
-through `llmagent.llm.OpenAIClient`. Perception/decision/action layers will
-land on top — see `CLAUDE.md` for the planned shape.
+FastAPI scaffold with agent CRUD and SSE chat endpoint. LLM provider
+abstraction and action parser are in progress. See `CLAUDE.md` for the planned
+shape.

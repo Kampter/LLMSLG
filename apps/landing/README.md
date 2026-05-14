@@ -1,6 +1,20 @@
 # landing
 
-Public marketing page. Next.js 15, App Router, React 19, TypeScript.
+Game client + BFF (Backend-for-Frontend). Next.js 15, App Router, React 19,
+TypeScript.
+
+## Routes
+
+| Route         | Purpose                                             |
+| ------------- | --------------------------------------------------- |
+| `/`           | Marketing landing page                              |
+| `/auth`       | Sign-in / sign-up (Supabase Auth)                   |
+| `/onboarding` | Tutorial + first-time player flow                   |
+| `/game`       | SLG game interface (map, resources, units)          |
+| `/chat`       | Agent command chatbox                               |
+| `/docs`       | MDX game guides                                     |
+| `/community`  | Community discussion (future)                       |
+| `/api/*`      | BFF API Routes — proxy to Game Server + LLM Service |
 
 ## Run
 
@@ -14,5 +28,5 @@ pnpm --filter @llmslg/landing test
 
 ## Status
 
-Harness-only. The page has a single placeholder route at `/`. See `CLAUDE.md`
-for content rules.
+MVP scaffold. Auth, game UI, and chatbox are in progress.
+See `CLAUDE.md` for architecture details.

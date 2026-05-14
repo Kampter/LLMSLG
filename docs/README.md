@@ -7,7 +7,7 @@
 | [`claude-code-guide.md`](./claude-code-guide.md)         | Full tour of the Claude Code harness.                         |
 | [`contributing.md`](./contributing.md)                   | PR hygiene, review etiquette, what not to do.                 |
 | [`game-design-core-loop.md`](./game-design-core-loop.md) | Game design: resource loop, galaxy structure, ship mechanics. |
-| [`game-architecture.md`](./game-architecture.md)         | Technical architecture: Agent, Server, Frontend layers.       |
+| [`architecture.md`](./architecture.md)                   | Bird's-eye view of the system and its boundaries.             |
 | [`api-reference.md`](./api-reference.md)                 | HTTP API reference for the game server.                       |
 | [`agent-tools.md`](./agent-tools.md)                     | LLM agent tool definitions and calling flow.                  |
 | [`testing.md`](./testing.md)                             | Test strategy: unit tests, eval tests, benchmarks.            |
