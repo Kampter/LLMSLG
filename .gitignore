@@ -90,3 +90,7 @@ pnpm-debug.log*
 .scratch/
 tmp/
 .tmp/
+
+# ─── Vercel local state ─────────────────────────────────────────────────────
+.vercel/
+.vercel
