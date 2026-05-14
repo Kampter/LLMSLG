@@ -50,6 +50,10 @@ append 格式：
 不要为琐碎事项写决策（"重命名变量"、"修 typo"）。判断标准：
 _"如果一个新 reviewer 看 PR 时不知道这个，会问'为什么'吗？"_ 不会就别写。
 
+## Technical enforcement
+
+A `PreToolUse` hook (`.claude/hooks/pre-edit-worktree-guard.sh`) intercepts every `Edit`, `Write`, and `MultiEdit` call. When the session is inside a worktree, the hook verifies that the target `file_path` resolves inside the worktree directory; if the path resolves outside (e.g., points to the main checkout), the hook blocks the operation with a clear reason. This is defense-in-depth: the `user-prompt-detect-dev.sh` hook blocks dev prompts on main, and the `pre-edit-worktree-guard.sh` hook blocks accidental file writes that bypass worktree isolation (see issue #43).
+
 ## Cleanup
 
 PR merge 后清理 worktree：
