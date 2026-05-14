@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# UserPromptSubmit hook: 在 main 上检测开发关键词的 prompt 时硬 block，
+# UserPromptSubmit hook: 在主工作区（.git 是目录）上检测开发关键词的 prompt 时硬 block，
 # 引导用户先 `/start-task <slug>` 进 worktree。
 #
 # 关键约束:
@@ -25,8 +25,15 @@ case "$prompt" in
 esac
 
 project_dir="${CLAUDE_PROJECT_DIR:-$PWD}"
-branch="$(git -C "$project_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
-[ "$branch" != "main" ] && exit 0
+
+# Primary worktree: .git is a directory
+# Sub-worktree:     .git is a file
+if [ -d "$project_dir/.git" ]; then
+    # Primary worktree — always block development, regardless of branch
+    :
+else
+    exit 0  # Sub-worktree — allow
+fi
 
 # Early exit if prompt starts with an interrogative word (question / clarification
 # intent). This is a strong signal of read-only intent that catches phrasings
@@ -49,7 +56,7 @@ if ! printf '%s' "$prompt" | grep -E -iq \
   exit 0
 fi
 
-reason="代码改动必须在 worktree 里做，main 上禁止编辑（即便是 typo / dependabot patch）。
+reason="代码改动必须在 worktree 里做，主工作区上禁止编辑（即便是 typo / dependabot patch）。
 
 请先创建 worktree：
   /start-task <slug>
@@ -65,7 +72,7 @@ if [ -f "$log_event" ]; then
   extra="$(jq -nc '{
       hook_event_name: "UserPromptSubmit",
       decision: "block",
-      reason_tag: "main-dev-keyword"
+      reason_tag: "primary-worktree-dev-keyword"
     }' 2>/dev/null || printf '{"hook_event_name":"UserPromptSubmit","decision":"block"}')"
   printf '%s' "$payload" | bash "$log_event" "$extra" || true
 fi
@@ -73,7 +80,7 @@ fi
 if command -v jq >/dev/null 2>&1; then
   printf '%s' "$reason" | jq -Rs '{decision: "block", reason: .}'
 else
-  printf '{"decision":"block","reason":"main 上禁止开发，先 /start-task <slug>。"}\n'
+  printf '{"decision":"block","reason":"主工作区上禁止开发，先 /start-task <slug>。"}\n'
 fi
 
 exit 0
