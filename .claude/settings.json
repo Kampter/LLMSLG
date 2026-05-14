@@ -219,7 +219,8 @@
     ]
   },
   "enabledPlugins": {
-    "supabase@claude-plugins-official": true
+    "supabase@claude-plugins-official": true,
+    "railway@railway-skills": true
   },
   "claudeMdExcludes": []
 }
