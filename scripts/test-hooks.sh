@@ -624,6 +624,55 @@ fi
 rm -rf "$proj"
 
 # ---------------------------------------------------------------------------
+# pre-edit-worktree-guard.sh
+#   Args: $1 = file_path
+#         $2 = cwd
+#         $3 = expected decision: "block" or "allow"
+#         $4 = human label
+# ---------------------------------------------------------------------------
+assert_worktree_guard() {
+  local file_path="$1" cwd="$2" expect="$3" label="$4"
+  tests=$((tests + 1))
+  local payload result decision="allow"
+  payload=$(jq -nc \
+    --arg fp "$file_path" \
+    --arg cwd "$cwd" \
+    '{tool_input: {file_path: $fp}, cwd: $cwd}')
+  result=$(printf '%s' "$payload" | bash .claude/hooks/pre-edit-worktree-guard.sh 2>/dev/null || true)
+  if printf '%s' "$result" | jq -e '.decision == "block"' >/dev/null 2>&1; then
+    decision="block"
+  fi
+  if [ "$decision" = "$expect" ]; then
+    ok "worktree-guard [$expect] $label"
+  else
+    fail "worktree-guard expected $expect got $decision: $label"
+  fi
+}
+
+step "pre-edit-worktree-guard.sh — main checkout (cwd outside worktrees) → allow"
+assert_worktree_guard '/Users/dev/proj/llmslg/README.md' '/Users/dev/proj/llmslg' allow 'absolute path on main'
+assert_worktree_guard 'docs/architecture.md' '/Users/dev/proj/llmslg' allow 'relative path on main'
+
+step "pre-edit-worktree-guard.sh — worktree checkout, file inside worktree → allow"
+proj="$REPO_ROOT"
+wt_dir="$proj/.claude/worktrees/test-wt"
+mkdir -p "$wt_dir/apps/landing"
+assert_worktree_guard "$wt_dir/apps/landing/page.tsx" "$wt_dir/apps/landing" allow 'absolute path inside worktree'
+assert_worktree_guard 'page.tsx' "$wt_dir/apps/landing" allow 'relative path inside worktree'
+assert_worktree_guard 'src/components/Button.tsx' "$wt_dir/apps/landing" allow 'relative nested path inside worktree'
+rm -rf "$proj/.claude/worktrees/test-wt"
+
+step "pre-edit-worktree-guard.sh — worktree checkout, path outside worktree → block"
+proj="$REPO_ROOT"
+wt_dir="$proj/.claude/worktrees/test-wt"
+mkdir -p "$wt_dir/apps/landing"
+assert_worktree_guard "$proj/README.md" "$wt_dir/apps/landing" block 'absolute path to main repo'
+assert_worktree_guard "$proj/apps/server/main.py" "$wt_dir/apps/landing" block 'absolute path to main repo subdir'
+assert_worktree_guard '../../../README.md' "$wt_dir/apps/landing" block 'relative path outside worktree (../../../)'
+assert_worktree_guard '../../../../../README.md' "$wt_dir/apps/landing" block 'relative path way outside worktree (../../../../../)'
+rm -rf "$proj/.claude/worktrees/test-wt"
+
+# ---------------------------------------------------------------------------
 # Fixture sanity: every fixture is well-formed JSON with the 2026
 # common-field set. Catches schema drift early.
 # ---------------------------------------------------------------------------

@@ -13,17 +13,18 @@ Shell hooks wired to Claude Code lifecycle events. All hooks must be:
 Source of truth for the wiring is `.claude/settings.json` (hooks key). Keep
 this table in sync when you add or remove a hook.
 
-| File                        | Event                 | Matcher                | Purpose                                                                |
-| --------------------------- | --------------------- | ---------------------- | ---------------------------------------------------------------------- |
-| `post-edit-format.sh`       | `PostToolUse`         | Edit\|Write\|MultiEdit | Auto-format the file Claude just edited.                               |
-| `pre-bash-deny-secrets.sh`  | `PreToolUse`          | Bash                   | Block secret-leaking or destructive shell commands; audits each block. |
-| `session-start-context.sh`  | `SessionStart`        | -                      | Inject the session banner; prune audit logs older than 30 days.        |
-| `stop-summary.sh`           | `Stop`                | -                      | Append a per-turn audit line.                                          |
-| `subagent-stop-log.sh`      | `SubagentStop`        | -                      | Audit-log subagent finish (agent_id, agent_type).                      |
-| `session-end-log.sh`        | `SessionEnd`          | -                      | Audit-log session terminator (reason).                                 |
-| `user-prompt-router.sh`     | `UserPromptExpansion` | ship\|release\|deploy  | Gate /release & /deploy; audit-log every matched expansion.            |
-| `user-prompt-detect-dev.sh` | `UserPromptSubmit`    | -                      | Block dev-style prompts on `main`; read-only intents allowed.          |
-| `worktree-create.sh`        | `WorktreeCreate`      | -                      | Custom worktree creation: branch + `.env*` copy + ready msg.           |
+| File                         | Event                 | Matcher                | Purpose                                                                |
+| ---------------------------- | --------------------- | ---------------------- | ---------------------------------------------------------------------- |
+| `post-edit-format.sh`        | `PostToolUse`         | Edit\|Write\|MultiEdit | Auto-format the file Claude just edited.                               |
+| `pre-bash-deny-secrets.sh`   | `PreToolUse`          | Bash                   | Block secret-leaking or destructive shell commands; audits each block. |
+| `session-start-context.sh`   | `SessionStart`        | -                      | Inject the session banner; prune audit logs older than 30 days.        |
+| `stop-summary.sh`            | `Stop`                | -                      | Append a per-turn audit line.                                          |
+| `subagent-stop-log.sh`       | `SubagentStop`        | -                      | Audit-log subagent finish (agent_id, agent_type).                      |
+| `session-end-log.sh`         | `SessionEnd`          | -                      | Audit-log session terminator (reason).                                 |
+| `pre-edit-worktree-guard.sh` | `PreToolUse`          | Edit\|Write\|MultiEdit | Block edits that resolve outside the worktree (issue #43).             |
+| `user-prompt-router.sh`      | `UserPromptExpansion` | ship\|release\|deploy  | Gate /release & /deploy; audit-log every matched expansion.            |
+| `user-prompt-detect-dev.sh`  | `UserPromptSubmit`    | -                      | Block dev-style prompts on `main`; read-only intents allowed.          |
+| `worktree-create.sh`         | `WorktreeCreate`      | -                      | Custom worktree creation: branch + `.env*` copy + ready msg.           |
 
 ## Helpers (not wired directly)
 
