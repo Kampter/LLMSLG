@@ -12,13 +12,13 @@ set -uo pipefail
 
 payload="$(cat || true)"
 
-# Extract file_path and cwd from stdin JSON. Defensive: allow on missing tools/fields.
-file_path=""
+# Extract fields from stdin JSON. Defensive: allow on missing tools/fields.
+tool_name=""
 cwd=""
 if command -v jq >/dev/null 2>&1 && [ -n "$payload" ]; then
-  file_path="$(printf '%s' "$payload" | jq -r '
-    .tool_input.file_path
-    // .toolInput.file_path
+  tool_name="$(printf '%s' "$payload" | jq -r '
+    .tool_name
+    // .toolName
     // empty
   ' 2>/dev/null || true)"
   cwd="$(printf '%s' "$payload" | jq -r '
@@ -28,11 +28,10 @@ if command -v jq >/dev/null 2>&1 && [ -n "$payload" ]; then
 fi
 
 # Fallback to env vars if stdin fields are missing.
-[ -z "$file_path" ] && file_path="${CLAUDE_FILE_PATH:-}"
+[ -z "$tool_name" ] && tool_name="${CLAUDE_TOOL_NAME:-}"
 [ -z "$cwd" ] && cwd="${PWD:-}"
 
-# Missing file_path or cwd: we can't make a decision, allow.
-[ -z "$file_path" ] && exit 0
+# Missing cwd: we can't make a decision, allow.
 [ -z "$cwd" ] && exit 0
 
 project_dir="${CLAUDE_PROJECT_DIR:-$PWD}"
@@ -73,34 +72,6 @@ fi
 # Not in a worktree: allow all edits.
 [ -z "$worktree_root" ] && exit 0
 
-# Normalize file_path to absolute.
-abs_path=""
-case "$file_path" in
-  /*)
-    abs_path="$file_path"
-    ;;
-  *)
-    # Relative: resolve against cwd
-    if [ -d "$cwd" ]; then
-      abs_path="$(cd "$cwd" && pwd -P)/$file_path"
-    else
-      abs_path="$cwd/$file_path"
-    fi
-    ;;
-esac
-
-# Normalize the absolute path (macOS symlink safety).
-# For non-existent files (Write of new file), normalize the parent directory.
-normalized_path=""
-if [ -e "$abs_path" ]; then
-  normalized_path="$(cd "$(dirname "$abs_path")" && pwd -P)/$(basename "$abs_path")"
-elif [ -d "$(dirname "$abs_path")" ]; then
-  normalized_path="$(cd "$(dirname "$abs_path")" && pwd -P)/$(basename "$abs_path")"
-else
-  # Parent doesn't exist either — can't normalize. Allow (defensive).
-  exit 0
-fi
-
 # Normalize worktree_root.
 normalized_wt_root=""
 if [ -d "$worktree_root" ]; then
@@ -109,33 +80,99 @@ else
   normalized_wt_root="$worktree_root"
 fi
 
-# Check if normalized file path is inside the worktree.
-case "$normalized_path" in
-  "$normalized_wt_root"/* | "$normalized_wt_root")
-    # Inside worktree: allow.
-    exit 0
-    ;;
-  *)
-    # Outside worktree: block.
-    log_event="$project_dir/.claude/hooks/lib/log-event.sh"
-    reason="Edit/Write blocked: path resolves outside the current worktree."
+# Helper: check if a file path resolves inside the worktree.
+# Returns 0 if inside, 1 if outside.
+check_path_inside_worktree() {
+  local fp="$1" target_cwd="$2"
+  local abs_path="" normalized_path=""
 
-    audit_block() {
-      if [ -f "$log_event" ]; then
-        local extra
-        extra="$(jq -nc --arg r "$reason" '{
-          hook_event_name: "PreToolUse",
-          tool_name: "Edit",
-          decision: "block",
-          reason_tag: "worktree-guard"
-        }' 2>/dev/null || printf '{"hook_event_name":"PreToolUse","decision":"block"}')"
-        printf '%s' "$payload" | bash "$log_event" "$extra" || true
+  case "$fp" in
+    /*)
+      abs_path="$fp"
+      ;;
+    *)
+      if [ -d "$target_cwd" ]; then
+        abs_path="$(cd "$target_cwd" && pwd -P)/$fp"
+      else
+        abs_path="$target_cwd/$fp"
       fi
-    }
+      ;;
+  esac
 
-    audit_block
-    printf '{"decision":"block","reason":%s}\n' \
-      "$(printf '%s' "$reason" | jq -Rs . 2>/dev/null || printf '"blocked"')"
-    exit 0
-    ;;
-esac
+  if [ -e "$abs_path" ]; then
+    normalized_path="$(cd "$(dirname "$abs_path")" && pwd -P)/$(basename "$abs_path")"
+  elif [ -d "$(dirname "$abs_path")" ]; then
+    normalized_path="$(cd "$(dirname "$abs_path")" && pwd -P)/$(basename "$abs_path")"
+  else
+    # Parent doesn't exist — can't normalize. Allow (defensive).
+    return 0
+  fi
+
+  case "$normalized_path" in
+    "$normalized_wt_root"/* | "$normalized_wt_root")
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+# Extract ALL file paths from the payload.
+# MultiEdit has .tool_input.edits[].file_path; Edit/Write has .tool_input.file_path.
+file_paths=""
+if command -v jq >/dev/null 2>&1 && [ -n "$payload" ]; then
+  # Try MultiEdit first.
+  file_paths="$(printf '%s' "$payload" | jq -r '
+    if .tool_input.edits then
+      [.tool_input.edits[].file_path] | .[]
+    elif .tool_input.file_path then
+      .tool_input.file_path
+    else
+      empty
+    end
+  ' 2>/dev/null || true)"
+fi
+
+# Fallback to env var if stdin extraction yielded nothing.
+[ -z "$file_paths" ] && file_paths="${CLAUDE_FILE_PATH:-}"
+
+# No paths to check: allow (defensive).
+[ -z "$file_paths" ] && exit 0
+
+# Loop through every path; block if ANY is outside the worktree.
+outside_path=""
+while IFS= read -r fp; do
+  [ -z "$fp" ] && continue
+  if ! check_path_inside_worktree "$fp" "$cwd"; then
+    outside_path="$fp"
+    break
+  fi
+done <<EOF
+$file_paths
+EOF
+
+if [ -n "$outside_path" ]; then
+  log_event="$project_dir/.claude/hooks/lib/log-event.sh"
+  reason="${tool_name:-Edit}/Write blocked: path resolves outside the current worktree."
+
+  audit_block() {
+    if [ -f "$log_event" ]; then
+      local extra
+      extra="$(jq -nc --arg r "$reason" --arg tn "${tool_name:-Edit}" '{
+        hook_event_name: "PreToolUse",
+        tool_name: $tn,
+        decision: "block",
+        reason_tag: "worktree-guard"
+      }' 2>/dev/null || printf '{"hook_event_name":"PreToolUse","decision":"block"}')"
+      printf '%s' "$payload" | bash "$log_event" "$extra" || true
+    fi
+  }
+
+  audit_block
+  printf '{"decision":"block","reason":%s}\n' \
+    "$(printf '%s' "$reason" | jq -Rs . 2>/dev/null || printf '"blocked"')"
+  exit 0
+fi
+
+exit 0
