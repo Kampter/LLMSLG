@@ -10,6 +10,7 @@
 | [`game-architecture.md`](./game-architecture.md)         | Technical architecture: Agent, Server, Frontend layers.       |
 | [`api-reference.md`](./api-reference.md)                 | HTTP API reference for the game server.                       |
 | [`agent-tools.md`](./agent-tools.md)                     | LLM agent tool definitions and calling flow.                  |
+| [`deployment.md`](./deployment.md)                       | Vercel deployment playbook for `apps/landing`.                |
 | [`testing.md`](./testing.md)                             | Test strategy: unit tests, eval tests, benchmarks.            |
 | [`adr/`](./adr)                                          | Architectural decision records.                               |
 
