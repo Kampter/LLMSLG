@@ -58,7 +58,14 @@ async def get_or_create_player(
 
 async def update_player(db: AsyncSession, state: PlayerState) -> PlayerState:
     """Persist an already-mutated PlayerState instance."""
-    await db.commit()
+    from sqlalchemy.orm.exc import StaleDataError
+
+    from server.state.service import ConcurrentModificationError
+
+    try:
+        await db.commit()
+    except StaleDataError as exc:
+        raise ConcurrentModificationError() from exc
     await db.refresh(state)
     return state
 
