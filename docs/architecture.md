@@ -97,6 +97,17 @@ this doc and the code disagree, the code wins.
   real (in-process) services with fakes for external dependencies.
 - **No live LLM calls** in tests. Use the `FakeLLM` fixture pattern.
 
+### Deployment
+
+- `apps/landing` ships to Vercel via the platform's native Git Integration.
+  Pushes to `main` produce production deployments; PR branches produce
+  preview URLs. The build contract lives in
+  [`apps/landing/vercel.json`](../apps/landing/vercel.json).
+- `apps/llmagent` and `apps/server` are not yet deployed to a cloud target;
+  they run locally and in CI only.
+- Playbook: [`deployment.md`](./deployment.md). Decision record:
+  [`adr/0003-vercel-landing-deployment.md`](./adr/0003-vercel-landing-deployment.md).
+
 ## Boundaries to defend
 
 1. **Server is authoritative.** Clients propose; server disposes.
