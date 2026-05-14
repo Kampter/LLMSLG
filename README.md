@@ -38,6 +38,18 @@ uv run pytest apps/llmagent          # single Python package
 pnpm --filter @llmslg/landing dev    # single TS app
 ```
 
+## Deployment
+
+`apps/landing` deploys to Vercel via the platform's native Git Integration:
+`main` ships to production, PR branches produce preview URLs. The build
+contract is checked into [`apps/landing/vercel.json`](apps/landing/vercel.json),
+and operational details (first-time setup, env vars, rollback) live in
+[`docs/deployment.md`](docs/deployment.md). The decision and trade-offs are
+recorded in [`docs/adr/0003-vercel-landing-deployment.md`](docs/adr/0003-vercel-landing-deployment.md).
+
+`apps/llmagent` and `apps/server` are not yet deployed to a cloud target.
+They run locally and in CI only.
+
 ## Working with Claude Code
 
 This repo ships a complete Claude Code harness in `.claude/`:
