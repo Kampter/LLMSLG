@@ -9,7 +9,7 @@ license = { text = "TBD" }
 
 dependencies = [
     "pydantic>=2.13.4",
-    "typing-extensions>=4.12.0",
+    "typing-extensions>=4.15.0",
 ]
 
 [build-system]
